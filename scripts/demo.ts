@@ -64,13 +64,17 @@ async function main() {
       process.env.SHELF_CATALOG_STATE ??
       ".local/catalog.json",
   );
-  if (args.includes("--reset")) await resetCatalogStock(stateFile);
-  const catalog = await startCatalogServer({ port: catalogPort, stateFile });
+  const koha = process.env.CATALOG_MODE === "koha";
+  if (!koha && args.includes("--reset")) await resetCatalogStock(stateFile);
+  const catalog = koha
+    ? undefined
+    : await startCatalogServer({ port: catalogPort, stateFile });
+  if (catalog)
+    console.log(
+      `Shelf catalog simulator ready on loopback port ${catalogPort}; stock changes persist in ${stateFile}.`,
+    );
   console.log(
-    `Shelf catalog simulator ready on loopback port ${catalogPort}; stock changes persist in ${stateFile}.`,
-  );
-  console.log(
-    `Starting ${args.includes("--production") ? "production" : "development"} Shelf on port ${appPort}. Sample records and holdings only.`,
+    `Starting ${args.includes("--production") ? "production" : "development"} Shelf on port ${appPort}. ${koha ? "Koha sandbox catalog selected." : "Sample records and holdings only."}`,
   );
   const child = spawn(
     process.execPath,
@@ -87,8 +91,8 @@ async function main() {
       env: {
         ...process.env,
         NEXT_TELEMETRY_DISABLED: "1",
-        CATALOG_MODE: "http-demo",
-        DEMO_CATALOG_URL: catalog.url,
+        CATALOG_MODE: koha ? "koha" : "http-demo",
+        ...(catalog ? { DEMO_CATALOG_URL: catalog.url } : {}),
       },
     },
   );
@@ -103,12 +107,12 @@ async function main() {
       await new Promise<void>((resolve) => child.once("exit", () => resolve()));
       clearTimeout(kill);
     }
-    await catalog.close();
+    await catalog?.close();
     process.exitCode = code;
   }
   child.once("error", async () => {
     console.error("Unable to start the Shelf application.");
-    await catalog.close();
+    await catalog?.close();
     process.exitCode = 1;
   });
   child.once("exit", (code) => {

@@ -2,6 +2,7 @@ import { discover } from "../engine/discovery";
 import { mockProvider } from "../providers/mock";
 import { HttpDemoProvider } from "../providers/http-demo";
 import { CarlXProvider } from "../providers/carlx";
+import { kohaFromEnvironment } from "./koha-config";
 import { OpenAIIntelligence } from "../ai/openai";
 import { SessionStore } from "./sessions";
 import type { DiscoveryInput, DiscoveryTrace } from "../types";
@@ -64,17 +65,19 @@ export function validRequest(value: unknown): value is SearchRequest {
 }
 function dependencies(ai: boolean) {
   const mode = process.env.CATALOG_MODE ?? "mock";
-  if (!["mock", "http-demo", "carlx"].includes(mode))
+  if (!["mock", "http-demo", "carlx", "koha"].includes(mode))
     throw Error("Unsupported catalog configuration");
   return {
     catalog:
-      mode === "carlx"
-        ? new CarlXProvider()
-        : mode === "http-demo"
-          ? new HttpDemoProvider(
-              process.env.DEMO_CATALOG_URL || "http://127.0.0.1:4310",
-            )
-          : mockProvider,
+      mode === "koha"
+        ? kohaFromEnvironment()
+        : mode === "carlx"
+          ? new CarlXProvider()
+          : mode === "http-demo"
+            ? new HttpDemoProvider(
+                process.env.DEMO_CATALOG_URL || "http://127.0.0.1:4310",
+              )
+            : mockProvider,
     intelligence:
       ai && process.env.OPENAI_API_KEY
         ? new OpenAIIntelligence(
@@ -115,6 +118,13 @@ export async function search(request: SearchRequest) {
     const { state: _, trace, ...response } = result;
     return {
       ...response,
+      notices:
+        result.source === "koha"
+          ? [
+              ...result.notices,
+              "Koha sandbox search currently covers titles, authors and summaries. Subject metadata is not supplied by this adapter, so genre filters and similar-title discovery have limited coverage.",
+            ]
+          : result.notices,
       session,
       branch: result.state.preferences.branch ?? "",
       preferences: result.state.preferences,

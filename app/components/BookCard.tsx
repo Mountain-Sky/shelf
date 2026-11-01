@@ -56,6 +56,8 @@ export function BookCard({
   const unknown = book.availability.some((h) => h.status === "unknown");
   const evidence = book.evidence.find((e) => e.field === "subjects");
   const edition = selectedEdition(book);
+  const fixture = edition?.record.provenance.kind === "fixture";
+  const koha = edition?.record.ref.provider === "koha";
   return (
     <article className="book" aria-label={book.title}>
       <div className={`cover cover-${palette}`} aria-hidden="true">
@@ -64,7 +66,9 @@ export function BookCard({
         <div className="cover-orbit" />
         <div className="coverTitle">{book.title}</div>
         <div className="coverAuthor">{book.author}</div>
-        <span className="cover-imprint">shelf editions · demo</span>
+        <span className="cover-imprint">
+          {fixture ? "shelf editions · demo" : "shelf · placeholder cover"}
+        </span>
       </div>
       <button
         className={`cover-save ${saved ? "is-saved" : ""}`}
@@ -104,10 +108,12 @@ export function BookCard({
         >
           <span className="availability-dot" />
           {positive.length
-            ? `Demo copies at ${positive.length === 1 ? branchName(positive[0].branch) : `${positive.length} branches`}`
+            ? `${fixture ? "Demo copies" : "Available copies reported"} at ${positive.length === 1 ? branchName(positive[0].branch) : `${positive.length} branches`}`
             : unknown
               ? "Some availability is unknown"
-              : "No demo copies at selected branches"}
+              : fixture
+                ? "No demo copies at selected branches"
+                : "No available copies reported at selected branches"}
         </div>
         <details className="edition-details">
           <summary>
@@ -127,7 +133,7 @@ export function BookCard({
                 {a.branch}:{" "}
                 {a.status === "unknown"
                   ? "Availability unknown"
-                  : `${a.copies} demo copies`}
+                  : `${a.copies} ${fixture ? "demo copies" : "available copies reported"}`}
               </span>
             ))}
           </div>
@@ -150,8 +156,13 @@ export function BookCard({
             </div>
           ))}
           <p className="provenance-note">
-            {edition?.record.provenance.source ?? "Catalog source"} · Synthetic
-            demo holdings. Refresh your search for the latest observation.
+            {edition?.record.provenance.source ?? "Catalog source"} ·{" "}
+            {fixture
+              ? "Synthetic demo holdings."
+              : koha
+                ? "Koha sandbox observations, not live LCPL holdings. Availability is not a borrowing or hold guarantee."
+                : "Catalog observations. Availability is not a borrowing or hold guarantee."}{" "}
+            Refresh your search for the latest observation.
           </p>
         </details>
         <div className="book-actions">

@@ -2,7 +2,7 @@
 
 A working visual library discovery demo for the Loudoun County Public Library prototype. Explore a bookshelf, search or refine in natural language, compare editions, and keep a temporary reading list. The full demo reads 32 works / 44 edition records through an independent local catalog service with persistent synthetic holdings.
 
-**All records are demo fixtures and all branch counts are synthetic. No live LCPL catalog, CARL•X connection, patron accounts or holds are implemented.** Book cover panels are typographic placeholders, not official cover art.
+**In the default catalog mode, all records are demo fixtures and all branch counts are synthetic. No live LCPL catalog, CARL•X connection, patron accounts or holds are implemented.** Book cover panels are typographic placeholders, not official cover art.
 
 ## Replit deployment
 
@@ -45,6 +45,10 @@ The committed npm lockfile makes installs reproducible. `npm audit` checks known
 - Changing the branch reruns the current query. Availability is resolved separately: unavailable books remain discoverable unless you request only available titles. Zero copies and unknown availability are distinct.
 - Save/remove titles and copy or clear your reading list. Lists and the visible conversation are in browser memory only and disappear on reload; the engine uses a separate short-lived structured session described below.
 - With local diagnostics enabled, open Discovery Engine for the plan structure, retrieved candidates, grouping/ranking results, model status and stage timings. This optional view is for the local developer; it is not an authenticated administration system.
+
+## Optional Koha sandbox
+
+An opt-in, read-only Koha REST provider is available without changing the Next.js architecture. See [Koha sandbox provider](docs/koha.md) for server-only OAuth configuration, source contracts, limited subject/genre coverage, and live validation. The default demo still uses fixtures; enabling this adapter does not provision or host Koha.
 
 ## Optional AI
 

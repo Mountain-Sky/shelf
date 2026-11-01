@@ -17,6 +17,14 @@ export function Comparison({
   onSave: (book: ResultBook) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const allFixtures = books.every((book) =>
+    book.editions.every(
+      (edition) => edition.record.provenance.kind === "fixture",
+    ),
+  );
+  const hasKoha = books.some((book) =>
+    book.editions.some((edition) => edition.record.ref.provider === "koha"),
+  );
   useEffect(() => {
     if (open && !dialog.current?.open) dialog.current?.showModal();
     else if (!open && dialog.current?.open) dialog.current?.close();
@@ -114,7 +122,9 @@ export function Comparison({
                 ))}
               </tr>
               <tr>
-                <th scope="row">Demo availability</th>
+                <th scope="row">
+                  {allFixtures ? "Demo availability" : "Observed availability"}
+                </th>
                 {books.map((b) => (
                   <td key={b.id}>
                     {b.availability.map((a) => (
@@ -122,7 +132,7 @@ export function Comparison({
                         {branchName(a.branch)}:{" "}
                         {a.status === "unknown"
                           ? "unknown"
-                          : `${a.copies} demo copies`}
+                          : `${a.copies} ${selectedEdition(b)?.record.provenance.kind === "fixture" ? "demo copies" : "available copies reported"}`}
                       </p>
                     ))}
                   </td>
@@ -148,7 +158,11 @@ export function Comparison({
         <p className="empty-panel">Choose up to three books to compare.</p>
       )}
       <p className="provenance-note">
-        All records, edition details and holdings in this demo are sample data.
+        {allFixtures
+          ? "All records, edition details and holdings in this demo are sample data."
+          : hasKoha
+            ? "Koha records and item observations come from the test ILS, not live LCPL holdings. Availability is not a borrowing or hold guarantee."
+            : "Records and item observations come from their catalog sources. Availability is not a borrowing or hold guarantee."}{" "}
         Comparison preserves the observations from when you selected each title.
       </p>
     </dialog>

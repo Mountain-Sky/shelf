@@ -277,7 +277,14 @@ export default function Home() {
           </nav>
           <div className="demo-badge">
             <span /> Working demo{" "}
-            <span className="demo-badge-extra">· sample catalog</span>
+            <span className="demo-badge-extra">
+              ·{" "}
+              {source === "demo"
+                ? "sample catalog"
+                : source === "koha"
+                  ? "Koha sandbox"
+                  : "catalog connection"}
+            </span>
           </div>
         </header>
         <section className="hero" aria-labelledby="hero-heading">
@@ -417,7 +424,13 @@ export default function Home() {
                   })
                 }
               >
-                <option value="">All demo branches</option>
+                <option value="">
+                  {source === "demo"
+                    ? "All demo branches"
+                    : source === "koha"
+                      ? "All sandbox branches"
+                      : "All configured branches"}
+                </option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
@@ -670,7 +683,9 @@ export default function Home() {
                   </h3>
                   <p>
                     {started
-                      ? "No matching demo titles yet. Try a broader search."
+                      ? source === "demo"
+                        ? "No matching demo titles yet. Try a broader search."
+                        : "No matching catalog titles yet. Try a broader search."
                       : "Browse by feeling, discover by conversation."}
                   </p>
                   <small>
@@ -743,9 +758,26 @@ export default function Home() {
               <div className="guide-note">
                 <span className="note-star">✳</span>
                 <p>
-                  <strong>Real discovery. Sample data.</strong> These are
-                  demonstration records and synthetic branch counts, never live
-                  LCPL holdings.
+                  {source === "demo" ? (
+                    <>
+                      <strong>Real discovery. Sample data.</strong> These are
+                      demonstration records and synthetic branch counts, never
+                      live LCPL holdings.
+                    </>
+                  ) : source === "koha" ? (
+                    <>
+                      <strong>Koha sandbox catalog.</strong> Records and item
+                      observations come from the test ILS, not live LCPL
+                      holdings. Availability is not a borrowing or hold
+                      guarantee.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Catalog observations.</strong> Records come from
+                      the connected catalog. Availability is not a borrowing or
+                      hold guarantee.
+                    </>
+                  )}
                 </p>
               </div>
             </aside>
@@ -764,8 +796,12 @@ export default function Home() {
           <div className="labBar">
             <span>
               <span className="status-dot" />
-              {source === "demo" ? "Demo catalog" : `${source} catalog`} · No
-              patron accounts or live holds
+              {source === "demo"
+                ? "Demo catalog"
+                : source === "koha"
+                  ? "Koha sandbox catalog"
+                  : `${source} catalog`}{" "}
+              · No patron accounts or live holds
             </span>
             <button
               aria-expanded={showLab}
@@ -789,7 +825,12 @@ export default function Home() {
             shelf.
           </a>
           <p>Less searching. More discovering.</p>
-          <span>Discovery Lab · Illustrative covers, sample records</span>
+          <span>
+            Discovery Lab ·{" "}
+            {source === "koha"
+              ? "Illustrative covers, Koha sandbox records"
+              : "Illustrative covers, sample records"}
+          </span>
         </footer>
       </main>
       {compared.length > 0 && (

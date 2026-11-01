@@ -17,7 +17,8 @@
     "replit:start": "tsx scripts/demo.ts --replit --production --reset",
     "catalog:serve": "tsx scripts/catalog-server.ts serve",
     "catalog:set-stock": "tsx scripts/catalog-server.ts set-stock",
-    "catalog:reset": "tsx scripts/catalog-server.ts reset"
+    "catalog:reset": "tsx scripts/catalog-server.ts reset",
+    "koha:smoke": "tsx scripts/koha-smoke.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
