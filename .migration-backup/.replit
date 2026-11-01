@@ -1,0 +1,15 @@
+entrypoint = "app/page.tsx"
+modules = ["nodejs-20", "web"]
+run = "npm run replit:dev"
+
+[deployment]
+deploymentTarget = "vm"
+build = ["sh", "-c", "npm ci --include=dev && npm run build"]
+run = ["sh", "-c", "npm run replit:start"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[nix]
+channel = "stable-25_05"
