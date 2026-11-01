@@ -1,12 +1,12 @@
 :root {
-  --paper: #f8f7f2;
-  --ink: #233c34;
-  --muted: #6d7b73;
-  --green: #245745;
-  --line: #dfe4db;
-  --gold: #bd8550;
+  --paper: #ffffff;
+  --ink: #263b44;
+  --muted: #566970;
+  --green: #326d80;
+  --line: #d9e3e7;
+  --gold: #ad491b;
   --serif: Georgia, "Times New Roman", serif;
-  --sans: Arial, Helvetica, sans-serif;
+  --sans: Lato, "Segoe UI", Arial, Helvetica, sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -2554,5 +2554,416 @@ footer > span {
   }
   .cover-caption {
     font-size: 10px;
+  }
+}
+
+/* Civic-library visual language inspired by library.loudoun.gov.
+   Shelf keeps its own identity; no library assets or affiliation are implied. */
+:root {
+  --accent: #ad491b;
+  --accent-hover: #873813;
+  --surface: #f2f6f7;
+}
+.site-header {
+  background: white;
+  border-bottom: 4px solid var(--line);
+}
+.brand {
+  letter-spacing: -1.5px;
+  color: #343d42;
+}
+.brand-dot,
+.brand-mark,
+.tiny-star {
+  color: var(--accent);
+}
+.site-header nav a,
+.site-header nav button {
+  color: #435660;
+  font-weight: 700;
+}
+.nav-active:after {
+  background: var(--accent);
+  height: 4px;
+}
+.nav-count {
+  background: #e6f0f3;
+  color: #285b6c;
+}
+.demo-badge {
+  color: #435660;
+  border-color: var(--line);
+  border-radius: 4px;
+}
+.demo-badge-extra {
+  color: #52656e;
+}
+.hero {
+  padding-top: 54px;
+  padding-bottom: 40px;
+}
+.hero h1 {
+  font-family: var(--sans);
+  font-weight: 750;
+  font-size: clamp(36px, 4.4vw, 58px);
+  letter-spacing: -1.8px;
+}
+.hero h1 em {
+  font-style: normal;
+  font-weight: 750;
+  color: var(--green);
+}
+.eyebrow,
+.section-kicker {
+  color: #51636c;
+  font-size: 11px;
+}
+.hero-copy > p:not(.search-hint) {
+  color: #52656e;
+  max-width: 510px;
+  font-size: 16px;
+}
+.searchbox {
+  border: 1px solid #94adb7;
+  border-radius: 3px;
+  padding: 0 0 0 18px;
+  min-height: 64px;
+  box-shadow: 0 6px 20px #294a5510;
+}
+.searchbox input {
+  font-size: 16px;
+}
+.searchbox input::placeholder {
+  color: #64747a;
+}
+.searchbox button {
+  background: var(--accent);
+  border-radius: 0;
+  width: 64px;
+  height: 64px;
+}
+.searchbox button:hover {
+  background: var(--accent-hover);
+}
+.searchbox:focus-within {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px #326d8025;
+}
+.search-hint {
+  color: #52656e;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+.search-hint svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.art-sun {
+  background: #edf3f5;
+  border-radius: 4px;
+}
+.art-sun:after {
+  border-color: #d1e2e8;
+  border-radius: 4px;
+}
+.book-front {
+  background: #326d80;
+  color: #fff;
+}
+.book-front em {
+  color: #fff;
+}
+.book-back {
+  background: #ad491b;
+  color: #fff;
+}
+.art-spark {
+  color: var(--accent);
+}
+.art-caption {
+  color: #52656e;
+  font-family: var(--sans);
+}
+.starting-points > .section-kicker {
+  display: inline-block;
+  padding-bottom: 7px;
+  border-bottom: 3px solid var(--accent);
+}
+.starter-grid {
+  gap: 16px;
+}
+.starter-grid > button {
+  background: var(--green);
+  color: white;
+  border: 1px solid var(--green);
+  border-radius: 3px;
+  padding: 22px 16px;
+  min-height: 108px;
+}
+.starter-grid > button:hover {
+  background: #285969;
+  border-color: #285969;
+}
+.starter-grid strong {
+  font-size: 14px;
+}
+.starter-grid small {
+  color: #e1edf1;
+  font-size: 11px;
+}
+.starter-glyph,
+.starter-grid > button > svg {
+  color: white;
+}
+.discovery-workspace {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.workspace-heading h2 {
+  font-family: var(--sans);
+  font-size: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding-bottom: 10px;
+  border-bottom: 4px solid var(--accent);
+  width: fit-content;
+}
+.filter-toolbar {
+  border-color: #cedde2;
+}
+.filter-group,
+.filter-group label,
+.filter-group select,
+.filter-group > svg,
+.result-count,
+.reset-button {
+  color: #435e69;
+}
+.active-criteria > span,
+.active-criteria > button {
+  background: #e8f0f3;
+  color: #345e6d;
+  border-color: #cbdde4;
+}
+.active-criteria .query-chip {
+  color: #52656e;
+}
+.book {
+  border-color: #d4e0e5;
+  border-radius: 4px;
+  box-shadow: 0 3px 10px #213c4708;
+}
+.bookContent h3 {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1.25;
+}
+.book-summary,
+.bookContent .by,
+.bookFormat,
+.match-reason,
+.cover-caption,
+.provenance-note,
+.edition-details summary,
+.edition-row,
+.branch-holdings small {
+  color: #52656e;
+}
+.book-cover-art {
+  background: #edf1f3;
+}
+.cover-save {
+  color: var(--accent);
+  width: 36px;
+  height: 36px;
+}
+.cover-save:hover,
+.cover-save.is-saved {
+  background: var(--accent);
+  color: white;
+}
+.text-save {
+  color: var(--accent);
+  font-weight: 700;
+}
+.catalog-link {
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.branch-holdings li {
+  border-color: #cedde2;
+  border-radius: 3px;
+}
+.branch-holdings .holding-available {
+  background: #eaf3f5;
+}
+.refresh-availability {
+  color: #285b6c;
+}
+.similar-button {
+  background: #e8f0f3;
+  color: #285b6c;
+}
+.similar-button:hover {
+  background: #d8e8ee;
+}
+.compare-button {
+  border-color: #cbdde4;
+  color: #326d80;
+}
+.compare-button.is-selected {
+  background: #d8e8ee;
+  border-color: #326d80;
+  color: #254f5e;
+}
+.discovery-guide {
+  background: white;
+  border-color: #cbdde4;
+  border-top: 4px solid var(--green);
+  border-radius: 3px;
+}
+.discovery-guide h3,
+.saved-heading h3 {
+  font-family: var(--sans);
+  font-weight: 700;
+}
+.guide-symbol {
+  color: var(--green);
+  border-color: #cbdde4;
+}
+.guide-intro,
+.guide-note p,
+.guide-note strong,
+.conversation .assistant,
+.reading-list-note {
+  color: #52656e;
+}
+.refinements button {
+  color: #285b6c;
+  border-color: #cbdde4;
+  border-radius: 3px;
+}
+.refinements button:hover,
+.conversation {
+  background: #edf4f6;
+}
+.conversation,
+.refinements,
+.guide-note {
+  border-color: #d9e3e7;
+}
+.savedArea {
+  background: white;
+  border-color: #cbdde4;
+  border-top: 4px solid var(--accent);
+  border-radius: 3px;
+}
+.secondary-button {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  border-radius: 3px;
+}
+.secondary-button:hover {
+  background: var(--accent-hover);
+}
+footer {
+  max-width: none;
+  padding: 42px max(4%, calc((100% - 1180px) / 2));
+  background: #2d3236;
+  color: #e5ecef;
+  flex-wrap: wrap;
+}
+.footer-brand,
+footer .cover-policy {
+  color: #f0f4f6;
+}
+footer p {
+  font-family: var(--sans);
+  font-style: normal;
+}
+footer > span {
+  font-size: 11px;
+}
+@media (max-width: 760px) {
+  .hero {
+    padding-top: 36px;
+  }
+  .starter-grid > button {
+    padding: 18px 12px;
+  }
+  .hero h1 {
+    font-size: 44px;
+  }
+}
+@media (max-width: 540px) {
+  .site-header {
+    gap: 14px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 86px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .site-header nav {
+    height: 40px;
+  }
+  .demo-badge {
+    width: 100%;
+    justify-content: flex-end;
+    font-size: 10px;
+  }
+  .demo-badge-extra {
+    display: inline;
+  }
+  .hero h1 {
+    font-size: 36px;
+    letter-spacing: -1px;
+  }
+  .hero-copy > p:not(.search-hint) {
+    font-size: 15px;
+  }
+  .searchbox {
+    min-height: 54px;
+  }
+  .searchbox button {
+    width: 52px;
+    height: 54px;
+  }
+  .starter-grid {
+    gap: 10px;
+  }
+  .starter-grid strong {
+    font-size: 12px;
+  }
+  .starter-grid small {
+    font-size: 10px;
+  }
+  .starter-glyph {
+    width: 18px;
+  }
+  .workspace-heading h2 {
+    font-size: 23px;
+  }
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cover {
+    height: 280px;
+  }
+  .bookContent {
+    padding: 18px;
+  }
+  .book-summary {
+    min-height: 0;
+  }
+  .branch-holdings li {
+    grid-template-columns: 1fr auto;
+  }
+  footer {
+    padding-bottom: 90px;
   }
 }

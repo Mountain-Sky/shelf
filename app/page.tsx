@@ -344,13 +344,13 @@ export default function Home() {
               <span className="tiny-star">✳</span> YOUR NEXT CHAPTER STARTS HERE
             </div>
             <h1 id="hero-heading">
-              A little curiosity.
+              Your next chapter.
               <br />
-              <em>A whole new world.</em>
+              <em>Closer than you think.</em>
             </h1>
             <p>
-              Follow a feeling, find an old favorite, or take an unexpected
-              turn. There’s a story here for you.
+              Explore the catalog, find a book at your branch, and keep a
+              reading list for your next visit.
             </p>
             <form
               className="searchbox"
@@ -384,7 +384,7 @@ export default function Home() {
                 {busy ? (
                   <LoaderCircle className="spin" size={20} />
                 ) : (
-                  <ArrowRight size={21} />
+                  <Search size={21} />
                 )}
               </button>
             </form>
