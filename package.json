@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run test && npm run build",
     "test:e2e": "playwright test",
-    "format": "prettier --write app lib tests docs README.md playwright.config.ts"
+    "format": "prettier --write app lib tests docs \"*.md\" playwright.config.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

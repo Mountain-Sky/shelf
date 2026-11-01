@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Visit http://127.0.0.1:3000. No configuration or API key is needed. Scripts bind to loopback, not the public network. Stop with Ctrl+C.
+Visit http://127.0.0.1:3000. No configuration or API key is needed for discovery. Scripts bind to loopback, not the public network. Stop with Ctrl+C.
 
 Optional configuration: on macOS/Linux run `cp .env.example .env.local`; on Windows PowerShell run `Copy-Item .env.example .env.local`. Keep `CATALOG_MODE=mock`. Never commit `.env.local` or prefix a secret with `NEXT_PUBLIC_`.
 
@@ -33,16 +33,24 @@ The committed npm lockfile makes installs reproducible. `npm audit` checks known
 ## Using Shelf
 
 - Search for “Project Hail Mary”, “gentle science fiction”, or “adventure for kids”. Unmatched queries produce an honest empty result.
-- Follow-up prompts combine with the previous query. “Only mysteries” and children requests apply explicit fixture subject filters. This is a small English heuristic system, not semantic search or age-suitability advice.
-- Changing the branch reruns the current query. Availability is resolved separately: unavailable books remain discoverable. Zero copies and unknown availability are distinct.
-- Save/remove titles and copy or clear your reading list. Lists and conversations are in browser memory only and disappear on reload.
-- Open Discovery Engine for the plan, retrieved candidates, deduplication/ranking results, model status and stage timings. This optional view is for the local developer; it is not an authenticated administration system.
+- Follow-up prompts update structured session preferences. “Only mysteries” and children requests apply explicit fixture subject filters. This is a small English heuristic system, not semantic search or age-suitability advice.
+- Changing the branch reruns the current query. Availability is resolved separately: unavailable books remain discoverable unless you request only available titles. Zero copies and unknown availability are distinct.
+- Save/remove titles and copy or clear your reading list. Lists and the visible conversation are in browser memory only and disappear on reload; the engine uses a separate short-lived structured session described below.
+- With local diagnostics enabled, open Discovery Engine for the plan structure, retrieved candidates, grouping/ranking results, model status and stage timings. This optional view is for the local developer; it is not an authenticated administration system.
 
 ## Optional AI
 
-Put `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in `.env.local`, then restart. The default model is `gpt-4.1-mini`. The server sends only the current combined query and candidate IDs, titles, subjects and summaries to OpenAI with `store:false`. Do not enter patron personal information. Provider retention policies still apply.
+Put `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in `.env.local`, then restart. The default model is `gpt-4.1-mini`. The server sends the bounded current request/context and shortlisted candidate IDs, titles, contributors, subjects and summaries to OpenAI with `store:false`. Do not enter patron personal information. Provider retention policies still apply.
 
-AI can select up to three existing candidate IDs. Its structured output is validated against retrieved records; all prose is composed by the server from catalog facts. It cannot create new bibliographic records or availability claims. Errors, timeouts or invalid selections fall back to deterministic text. No key means no model requests. Live model connectivity requires your own key and has not been verified here; mocked success/error responses are tested.
+AI can propose bounded search terms and intent, then assess existing candidate records using exact supplied metadata as evidence. Its structured output is validated; it cannot relax strict filters. All displayed prose is composed by the server from catalog facts. It cannot create new bibliographic records or availability claims. Errors, timeouts or invalid selections fall back to deterministic text. No key means no model requests. Live model connectivity requires your own key and has not been verified here; mocked success/error responses are tested.
+
+## Architecture foundation
+
+Shelf uses a provider-independent Discovery Engine between the UI and every catalog/model integration. Read [ARCHITECTURE.md](ARCHITECTURE.md) first, then [DISCOVERY_ENGINE.md](DISCOVERY_ENGINE.md) and [CATALOG_DATA_MODEL.md](CATALOG_DATA_MODEL.md). The [roadmap](ROADMAP.md) separates implemented foundations from the later Koha example and visual redesign. CARL•X SOAP access/search are user-confirmed; this repository adapter awaits their sanitized mappings.
+
+Server sessions retain structured preferences and the latest displayed result order for 30 minutes idle, in memory only. Refreshing starts a new browser session; restarting the server expires server context. “More like the second one, but shorter” uses the selected edition’s fixture page count; missing length evidence prompts clarification. Strict page, format and availability filters are never silently relaxed.
+
+Set `SHELF_INSPECTOR=1` locally to enable diagnostic responses; restart the server after changing configuration. Browser diagnostics omit request text. No diagnostic trace is returned by default.
 
 ## Documentation
 

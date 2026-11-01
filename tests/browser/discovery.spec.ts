@@ -18,7 +18,9 @@ test("search, refine, inspect, select branch and manage a temporary reading list
   await expect(
     page.getByRole("heading", { name: "Retrieved candidates" }),
   ).toBeVisible();
-  await expect(page.locator(".labPanel")).toContainText("disabled");
+  await expect(
+    page.getByRole("region", { name: "Discovery Engine inspector" }),
+  ).toContainText("disabled");
   await page
     .locator("article")
     .first()
@@ -31,7 +33,9 @@ test("search, refine, inspect, select branch and manage a temporary reading list
   await expect(page.locator(".savedArea")).toHaveCount(0);
   await page.getByRole("button", { name: "Only mysteries" }).click();
   await expect(page.locator("article").first()).toBeVisible();
-  await expect(page.locator(".labPanel")).toContainText("mystery");
+  await expect(
+    page.getByRole("region", { name: "Discovery Engine inspector" }),
+  ).toContainText("mystery");
   await page.getByRole("textbox", { name: "Describe a book" }).fill("zzzxxyy");
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(
@@ -84,4 +88,32 @@ test("failed request restores input for retry", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "Search", exact: true }),
   ).toBeEnabled();
+});
+
+test("references use displayed order and clarification preserves the bookshelf", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const input = page.getByRole("textbox", { name: "Describe a book" });
+  await input.fill("space");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page.locator("article").nth(1)).toBeVisible();
+  const selected = await page
+    .locator("article")
+    .nth(1)
+    .locator("h3")
+    .textContent();
+  await input.fill("More like the second one, but shorter");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page.locator("article").first()).toBeVisible();
+  await expect(
+    page.locator("article h3").filter({ hasText: selected! }),
+  ).toHaveCount(0);
+  const titles = await page.locator("article h3").allTextContents();
+  await input.fill("More like result 99");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page.locator(".conversation")).toContainText(
+    "Which displayed title",
+  );
+  expect(await page.locator("article h3").allTextContents()).toEqual(titles);
 });

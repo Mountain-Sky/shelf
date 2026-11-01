@@ -1,8 +1,10 @@
 # CARL•X SOAP adapter handoff
 
-The `CatalogProvider` interface has separate `search(plan)` and `availability(books, branch)` methods. `CarlXProvider` intentionally throws and performs no network calls. No SOAP operation names, envelopes, namespaces, authentication mechanism or endpoints are assumed.
+CARL•X SOAP access and search are already confirmed by the user. The remaining repository work is mapping their existing requests/responses, not establishing feasibility.
 
-Obtain the following from the library's authorized CARL•X/vendor contact before implementation:
+The `CatalogProvider` interface has separate `search(query, signal)` and `holdings(recordRefs, branches, signal)` methods. `CarlXProvider` intentionally throws and performs no network calls. No SOAP operation names, envelopes, namespaces, authentication mechanism or endpoints are assumed.
+
+Start with the user's existing sanitized working SOAP examples. Use the following checklist to fill mapping gaps with the library/vendor as needed; do not turn it into a prerequisite for re-proving their working access:
 
 1. Exact CARL•X product/version, supported integration API/version, sandbox endpoint and approved network/VPN route. Confirm development access and permitted use.
 2. Authoritative WSDL plus every imported WSDL/XSD, version dates, service/port/binding, SOAP version, required HTTP headers and SOAPAction rules. Supply actual supported search and item/holdings operations, request fields, namespaces and element ordering.

@@ -10,6 +10,7 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run start -- --port 3100",
+    env: { SHELF_INSPECTOR: "1", OPENAI_API_KEY: "", CATALOG_MODE: "mock" },
     url: "http://127.0.0.1:3100",
     reuseExistingServer: false,
   },

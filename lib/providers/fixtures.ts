@@ -1,5 +1,15 @@
-import type { Book } from "../types";
-export const demo: Book[] = [
+import type { CatalogRecord, Holding } from "../types";
+type FixtureBook = {
+  id: string;
+  title: string;
+  author: string;
+  year: number;
+  format: string;
+  subjects: string[];
+  summary: string;
+  branches: Record<string, number>;
+};
+const demo: FixtureBook[] = [
   {
     id: "demo-1",
     title: "Project Hail Mary",
@@ -81,3 +91,65 @@ export const demo: Book[] = [
     branches: { ASH: 1, RUST: 1, PUR: 2 },
   },
 ];
+
+// All additional edition/extent/holdings values below are explicit test fixtures,
+// not assertions about a real edition or LCPL collection.
+const stamp = "2026-01-01T00:00:00.000Z";
+export const catalogRecords: CatalogRecord[] = demo.map((b, i) => ({
+  ref: { provider: "demo", id: b.id },
+  title: b.title,
+  contributors: [{ name: b.author, role: "author" }],
+  identifiers: [],
+  year: b.year,
+  format: "print",
+  language: "en",
+  subjects: b.subjects,
+  summary: b.summary,
+  extent:
+    i === 6 ? undefined : { pages: [496, 369, 160, 192, 304, 288, 0, 310][i] },
+  work: { source: "fixture-editor", id: b.id },
+  provenance: {
+    source: "Shelf curated demo fixtures",
+    kind: "fixture",
+    observedAt: stamp,
+  },
+}));
+catalogRecords.push({
+  ...catalogRecords[0],
+  ref: { provider: "demo", id: "demo-1-audio" },
+  format: "audiobook",
+  extent: { minutes: 960 },
+});
+catalogRecords.push({
+  ...catalogRecords[7],
+  ref: { provider: "demo", id: "demo-8-large" },
+  format: "large-print",
+  extent: { pages: 420 },
+});
+export const fixtureHoldings: Holding[] = demo.flatMap((b) =>
+  Object.entries(b.branches).map(([branch, copies]) => ({
+    record: { provider: "demo", id: b.id },
+    branch,
+    copies,
+    status: copies > 0 ? "available" : "unavailable",
+    observedAt: stamp,
+    provenance: {
+      source: "Shelf synthetic holdings",
+      kind: "fixture",
+      observedAt: stamp,
+    },
+  })),
+);
+fixtureHoldings.push({
+  record: { provider: "demo", id: "demo-1-audio" },
+  branch: "RUST",
+  copies: 1,
+  status: "available",
+  observedAt: stamp,
+  provenance: {
+    source: "Shelf synthetic holdings",
+    kind: "fixture",
+    observedAt: stamp,
+  },
+});
+// The large-print edition deliberately has missing holdings.

@@ -12,7 +12,8 @@ import {
   Copy,
 } from "lucide-react";
 import type { ResultBook as Book } from "../lib/types";
-import type { DiscoveryTrace } from "../lib/discovery";
+import type { DiscoveryTrace } from "../lib/types";
+import { branches } from "../lib/config/branches";
 type Turn = { role: "user" | "assistant"; text: string };
 export default function Home() {
   const [prompt, setPrompt] = useState(""),
@@ -20,18 +21,19 @@ export default function Home() {
   const [books, setBooks] = useState<Book[]>([]),
     [turns, setTurns] = useState<Turn[]>([]);
   const [copyStatus, setCopyStatus] = useState("");
-  const [lastSearch, setLastSearch] = useState({ message: "", context: "" });
+  const [session, setSession] = useState<{ id: string; revision: number }>();
+  const [notices, setNotices] = useState<string[]>([]);
+  const [actions, setActions] = useState<string[]>([]);
   const [resultBranch, setResultBranch] = useState("");
   const [busy, setBusy] = useState(false),
     [source, setSource] = useState("demo");
   const [trace, setTrace] = useState<DiscoveryTrace | null>(null),
     [showLab, setShowLab] = useState(false);
-  const [previousQuery, setPreviousQuery] = useState(""),
-    [saved, setSaved] = useState<Book[]>([]);
+  const [saved, setSaved] = useState<Book[]>([]);
   async function ask(
     q = prompt,
     selectedBranch = branch,
-    context = previousQuery,
+    action: "search" | "branch" = "search",
   ) {
     if (!q.trim() || busy) return;
     setBusy(true);
@@ -44,17 +46,26 @@ export default function Home() {
         body: JSON.stringify({
           message: q,
           branch: selectedBranch,
-          previousQuery: context,
+          action,
+          session,
         }),
       });
       const data = await r.json();
-      if (!r.ok) throw Error(data.error || "Search failed");
-      setLastSearch({ message: q, context });
-      setResultBranch(selectedBranch);
-      setBooks(data.books);
+      if (!r.ok) {
+        if (r.status === 410) {
+          setSession(undefined);
+          setBooks([]);
+        }
+        throw Error(data.error || "Search failed");
+      }
+      setSession(data.session);
+      setNotices(data.notices);
+      setActions(data.suggestedActions);
+      setBranch(data.branch);
+      setResultBranch(data.branch);
+      if (!data.clarification) setBooks(data.books);
       setSource(data.source);
-      setTrace(data.trace);
-      setPreviousQuery(data.trace.query);
+      setTrace(data.trace ?? null);
       setTurns((prev) => [...prev, { role: "assistant", text: data.reply }]);
     } catch (e) {
       setPrompt(q);
@@ -90,7 +101,7 @@ export default function Home() {
         </div>
         <div className="status">
           <span className="dot" />{" "}
-          {source === "demo" ? "Demo catalog" : "CarlX catalog"}
+          {source === "demo" ? "Demo catalog" : `${source} catalog`}
         </div>
       </header>
       <section className="hero">
@@ -133,18 +144,15 @@ export default function Home() {
             value={branch}
             onChange={(e) => {
               setBranch(e.target.value);
-              if (previousQuery)
-                void ask(
-                  lastSearch.message,
-                  e.target.value,
-                  lastSearch.context,
-                );
+              if (session) void ask("Update branch", e.target.value, "branch");
             }}
           >
             <option value="">All demo branches</option>
-            <option value="ASH">Ashburn</option>
-            <option value="RUST">Rust</option>
-            <option value="PUR">Purcellville</option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
           </select>
         </div>
         <div className="chips">
@@ -187,7 +195,11 @@ export default function Home() {
           </button>
         </div>
         {showLab && (
-          <div className="labPanel">
+          <div
+            className="labPanel"
+            role="region"
+            aria-label="Discovery Engine inspector"
+          >
             <h3>Discovery Engine · Developer inspector</h3>
             {trace ? (
               <>
@@ -217,6 +229,18 @@ export default function Home() {
                     2,
                   )}
                 </pre>
+                <h4>Queries, grouping, and holdings</h4>
+                <pre>
+                  {JSON.stringify(
+                    {
+                      queries: trace.queries,
+                      grouping: trace.grouping,
+                      availability: trace.availability,
+                    },
+                    null,
+                    2,
+                  )}
+                </pre>
                 <h4>Ranking trace</h4>
                 <pre>
                   {trace.ranked
@@ -234,10 +258,17 @@ export default function Home() {
               </>
             ) : (
               <p className="smallText">
-                Ask a question to inspect intent, query expansion, retrieval,
-                ranking, and stage timing.
+                Enable SHELF_INSPECTOR=1 on your local server and search to
+                inspect the engine. Request text is omitted from diagnostics.
               </p>
             )}
+          </div>
+        )}
+        {notices.length > 0 && (
+          <div className="labPanel" role="status">
+            {notices.map((n, i) => (
+              <p key={i}>{n}</p>
+            ))}
           </div>
         )}
         {saved.length > 0 && (
@@ -289,12 +320,7 @@ export default function Home() {
         )}
         {turns.length > 0 && (
           <div className="refinements">
-            {[
-              "Something funnier",
-              "More adventurous",
-              "Only mysteries",
-              "Something for kids",
-            ].map((q) => (
+            {actions.map((q) => (
               <button key={q} disabled={busy} onClick={() => ask(q)}>
                 {q}
               </button>
@@ -353,6 +379,21 @@ export default function Home() {
                     ? "Saved to your shelf"
                     : "Save for later"}
                 </button>
+                {b.editions.length > 1 && (
+                  <details>
+                    <summary>{b.editions.length} catalog editions</summary>
+                    {b.editions.map((e) => (
+                      <p key={JSON.stringify(e.record.ref)}>
+                        {e.record.format} · {e.record.year ?? "Year unknown"} ·{" "}
+                        {e.availability
+                          .map((h) => `${h.branch}: ${h.status}`)
+                          .join(", ")}
+                        <br />
+                        <small>{e.record.provenance.source}</small>
+                      </p>
+                    ))}
+                  </details>
+                )}
                 {b.catalogUrl && (
                   <a
                     href={b.catalogUrl}

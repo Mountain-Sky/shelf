@@ -1,39 +1,58 @@
 import type { CatalogProvider } from "../types";
-import { demo } from "./fixtures";
+import { recordKey } from "../types";
+import { catalogRecords, fixtureHoldings } from "./fixtures";
 export const mockProvider: CatalogProvider = {
-  mode: "demo",
-  async search(plan) {
-    return demo
-      .filter((b) =>
-        plan.expandedQueries.some((term) =>
-          [b.title, b.author, b.summary, ...b.subjects]
-            .join(" ")
-            .toLowerCase()
-            .includes(term),
-        ),
-      )
-      .map((b) => ({
-        ...b,
-        subjects: [...b.subjects],
-        branches: { ...b.branches },
-      }));
+  id: "demo",
+  kind: "fixture",
+  capabilities: {
+    fields: ["keyword", "title", "author", "identifier", "subject", "browse"],
   },
-  async availability(books, branch) {
-    return Object.fromEntries(
-      books.map((b) => [
-        b.id,
-        (branch ? [branch] : ["ASH", "RUST", "PUR"]).map((code) => ({
-          branch: code,
-          status:
-            b.branches[code] === undefined
-              ? "unknown"
-              : b.branches[code] > 0
-                ? "available"
-                : "unavailable",
-          copies: b.branches[code] ?? null,
-          source: "demo" as const,
-        })),
-      ]),
-    );
+  async search(query, signal) {
+    signal.throwIfAborted();
+    const text = query.text.toLowerCase();
+    const words = text.split(/\s+/).filter(Boolean);
+    const records = catalogRecords.filter((r) => {
+      if (query.field === "browse") return true;
+      if (query.field === "identifier")
+        return r.identifiers.some((i) => i.value.replace(/[- ]/g, "") === text);
+      if (query.field === "title") return r.title.toLowerCase().includes(text);
+      if (query.field === "author")
+        return r.contributors.some((c) => c.name.toLowerCase().includes(text));
+      if (query.field === "subject")
+        return r.subjects.some((s) => s.toLowerCase() === text);
+      const haystack = [
+        r.title,
+        ...r.contributors.map((c) => c.name),
+        ...r.subjects,
+        r.summary ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return words.some((w) => haystack.includes(w));
+    });
+    const offset = Number(query.cursor ?? 0);
+    if (!Number.isSafeInteger(offset) || offset < 0)
+      throw Error("Invalid fixture cursor");
+    const limit = Math.max(1, Math.min(query.limit, 20));
+    return {
+      records: structuredClone(records.slice(offset, offset + limit)),
+      ...(offset + limit < records.length
+        ? { nextCursor: String(offset + limit) }
+        : {}),
+    };
+  },
+  async holdings(refs, branches, signal) {
+    signal.throwIfAborted();
+    const keys = new Set(refs.map(recordKey));
+    const now = new Date().toISOString();
+    return fixtureHoldings
+      .filter(
+        (h) => keys.has(recordKey(h.record)) && branches.includes(h.branch),
+      )
+      .map((h) => ({
+        ...structuredClone(h),
+        observedAt: now,
+        provenance: { ...h.provenance, observedAt: now },
+      }));
   },
 };

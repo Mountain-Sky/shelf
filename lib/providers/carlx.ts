@@ -1,13 +1,15 @@
 import type { CatalogProvider } from "../types";
-/** Implement only against library/vendor supplied WSDL, schemas and redacted fixtures. */
+/** SOAP access/search is user-confirmed. Wire mappings await their sanitized working examples. */
 export class CarlXProvider implements CatalogProvider {
-  readonly mode = "carlx" as const;
+  readonly id = "carlx";
+  readonly kind = "catalog" as const;
+  readonly capabilities: CatalogProvider["capabilities"] = {
+    fields: ["keyword"],
+  };
   async search(): ReturnType<CatalogProvider["search"]> {
-    throw new Error(
-      "CarlX adapter is not configured: verified SOAP contracts are required.",
-    );
+    throw Error("CarlX mapping requires the existing verified SOAP examples.");
   }
-  async availability(): ReturnType<CatalogProvider["availability"]> {
-    throw new Error("CarlX holdings contract is not configured.");
+  async holdings(): ReturnType<CatalogProvider["holdings"]> {
+    throw Error("CarlX holdings mapping is not configured.");
   }
 }
