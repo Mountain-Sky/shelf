@@ -1,6 +1,6 @@
 # Private Koha sandbox evaluation
 
-Status: researched, not installed. Today's separate HTTP catalog simulator is not Koha and does not prove Koha or CARL•X API compatibility.
+Historical initial evaluation, before installation. A real local sandbox and adapter have since passed live checks; see [current Koha integration and validation](koha.md). The observations below record the initial assessment. Today's separate HTTP catalog simulator is not Koha and does not prove Koha or CARL•X API compatibility.
 
 ## Recommendation
 

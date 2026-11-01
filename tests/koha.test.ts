@@ -342,6 +342,9 @@ test("Koha transport rejects redirects, invalid JSON types and malformed search 
     } else if (mode === "html") {
       res.setHeader("Content-Type", "text/html");
       res.end("Login page");
+    } else if (mode === "invalid-json") {
+      res.setHeader("Content-Type", "application/json");
+      res.end("not-json-test-secret-fragment");
     } else if (mode === "oversized")
       reply(res, "x".repeat(2 * 1024 * 1024 + 1), 0);
     else {
@@ -352,6 +355,13 @@ test("Koha transport rejects redirects, invalid JSON types and malformed search 
   try {
     for (mode of ["redirect", "html", "oversized", "invalid-total"])
       await assert.rejects(f.provider.search(browse, signal()));
+    mode = "invalid-json";
+    await assert.rejects(
+      f.provider.search(browse, signal()),
+      (error: Error) =>
+        error.message === "Koha returned invalid JSON." &&
+        !error.message.includes("test-secret-fragment"),
+    );
     assert.equal(redirected, false);
     const controller = new AbortController();
     controller.abort();
@@ -398,4 +408,28 @@ test("Koha configuration refuses unsafe origins and missing explicit library map
     assert.throws(() => new KohaProvider({ ...options, baseUrl }));
   assert.throws(() => new KohaProvider({ ...options, branchMap: {} }));
   assert.throws(() => new KohaProvider({ ...options, clientSecret: "" }));
+});
+
+test("Koha keyword retrieval matches terms across metadata rather than requiring a contiguous phrase", async () => {
+  let query: unknown;
+  const f = await fixture((url, _req, res) => {
+    query = JSON.parse(url.searchParams.get("q")!);
+    reply(res, [biblio()], 1);
+  });
+  try {
+    await f.provider.search(
+      { field: "keyword", text: "left hand darkness", limit: 20 },
+      signal(),
+    );
+    assert.deepEqual(query, {
+      opac_suppressed: 0,
+      "-and": ["left", "hand", "darkness"].map((term) => ({
+        "-or": ["title", "author", "abstract"].map((field) => ({
+          [field]: { "-like": `%${term}%` },
+        })),
+      })),
+    });
+  } finally {
+    await f.close();
+  }
 });

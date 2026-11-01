@@ -68,3 +68,21 @@ The command performs real OAuth, bibliographic retrieval and holdings resolution
 Koha is a separate Perl/database/search service, not a package inside the Next.js app. The local development sandbox is not a permanent hosted service. A Replit deployment needs an independently hosted, private HTTPS-accessible Koha sandbox and server-side credentials. Never publish KTD's staff interface with default development credentials. The live demo can continue using `http-demo` until that hosting is configured; no deployment migration or framework rewrite is necessary.
 
 See [sandbox evaluation](koha-evaluation.md) for the official KTD setup sources and operational constraints.
+
+## Validation completed on 2026-11-01
+
+A real local Koha instance (version 26.0600045, pinned source above) was started with MariaDB, memcached, Apache/Plack and a bounded RabbitMQ configuration. It contains sample bibliographic data and synthetic items. This is not a mocked HTTP server.
+
+Verified through Shelf's actual provider and production API:
+
+- OAuth client-credentials authentication; the dedicated principal has only catalogue permission, password login disabled, and a patron-list request is denied (403).
+- Title and multiword keyword search return seeded bibliographic record 439, _The Left Hand of Darkness_ (Le Guin, 1969), with catalog provenance.
+- Initial observations: RUST one available item, ASH zero available (its item is not for loan), PUR zero available.
+- Changing only synthetic RUST item 973 through Koha administration from `notforloan=0` to `1` changed Shelf's result from one available copy to zero. Restoring it to `0` returned Shelf's count to one. No Shelf fixture or response was edited to produce this transition.
+- Live Chromium walkthrough: title search, branch change, source labeling, unavailable item display, and clarification when subjects are missing. No browser page errors. Anonymous Shelf access returns 401; authenticated discovery succeeds without a model key.
+- 64 automated tests, seven fixture/private-access browser tests, strict TypeScript and production build pass.
+- Koha OPAC and staff-login HTML/CSS return 200 locally; staff-account workflows beyond sandbox bootstrap were not comprehensively tested.
+
+The repeatable setup assets are in [sandbox/koha](../sandbox/koha/README.md). Generated credentials, container data and public image downloads remain outside Git. The consolidated setup generator was validated for pinned sources, private file permissions, rendered Compose configuration and shell syntax. The existing sandbox passed live checks after incremental environment repairs; a complete cold boot using the final combined recipe has **not** been independently rerun. Linux x86-64 was exercised; macOS/Windows Koha setup is unverified.
+
+This proves the initial Koha integration locally. It does not deploy Koha for Replit, verify the user's Replit production URL, establish production OPAC policies, enable subject-based discovery, or test CARL•X/live AI.

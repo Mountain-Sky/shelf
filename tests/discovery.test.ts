@@ -563,3 +563,34 @@ test("fiction and nonfiction switches use explicit catalog subjects", async () =
     ),
   );
 });
+
+test("explicit similarity without subject evidence asks clarification instead of browsing unrelated records", async () => {
+  const original = await search("Explore the collection");
+  const state = structuredClone(original.state);
+  state.snapshot[0].subjects = [];
+  const result = await discover(
+    {
+      message: "More like this",
+      action: "similar",
+      selectedResultId: state.snapshot[0].id,
+      state,
+    },
+    { catalog: mockProvider },
+  );
+  assert.match(result.clarification ?? "", /no catalog subjects/);
+  assert.equal(result.trace.queries.length, 0);
+  assert.deepEqual(result.state.snapshot, state.snapshot);
+});
+
+test("changing branches preserves known-title retrieval intent", async () => {
+  const original = await search("find The Hobbit");
+  const plan = planDiscovery({
+    message: "Update branch",
+    action: "branch",
+    branch: "RUST",
+    state: original.state,
+  });
+  assert.equal(plan.intent, "known_item");
+  assert.equal(plan.queries[0].field, "title");
+  assert.equal(plan.queries[0].text, "The Hobbit");
+});

@@ -167,6 +167,9 @@ export function planDiscovery(input: DiscoveryInput): Plan {
     else {
       query = `Similar to ${selected.title}`;
       terms = [...selected.subjects];
+      if (!terms.length)
+        clarification =
+          "This reference title has no catalog subjects to support a similarity search. Tell me a subject or theme you would like.";
       excludeResultId = selected.id;
       if (/shorter/i.test(message)) {
         if (selected.pages === undefined)
@@ -189,7 +192,10 @@ export function planDiscovery(input: DiscoveryInput): Plan {
     .filter((t) => !p.excludedSubjects.includes(t))
     .slice(-budgets.terms);
   p.requiredSubjects = [...new Set(p.requiredSubjects)].slice(0, budgets.terms);
-  const intent = refers || seedTitle ? "recommendation" : interpret(message);
+  const intent =
+    refers || seedTitle
+      ? "recommendation"
+      : interpret(input.action === "branch" ? query : message);
   const plan: Plan = {
     intent,
     browse,

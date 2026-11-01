@@ -53,7 +53,12 @@ async function json(response: Response): Promise<unknown> {
     }
     chunks.push(value);
   }
-  return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+  } catch {
+    // Parser errors can quote response fragments, including OAuth tokens.
+    throw Error("Koha returned invalid JSON.");
+  }
 }
 const blocked = new Set([
   "checked_out",
@@ -227,6 +232,7 @@ export class KohaProvider implements CatalogProvider {
       !Number.isInteger(query.limit) ||
       query.limit < 1 ||
       query.limit > 20 ||
+      (query.field !== "browse" && !query.text.trim()) ||
       query.text.length > 500
     )
       throw Error("Unsupported Koha search.");
@@ -246,7 +252,15 @@ export class KohaProvider implements CatalogProvider {
       filter[query.field] = like;
     else if (query.field === "identifier") filter.isbn = like;
     else if (query.field === "keyword")
-      filter["-or"] = [{ title: like }, { author: like }, { abstract: like }];
+      filter["-and"] = query.text
+        .trim()
+        .split(/\s+/)
+        .map((term) => {
+          const match = { "-like": `%${term.replace(/[\\%_]/g, "\\$&")}%` };
+          return {
+            "-or": [{ title: match }, { author: match }, { abstract: match }],
+          };
+        });
     const params = new URLSearchParams({
       _page: String(page),
       _per_page: String(query.limit),

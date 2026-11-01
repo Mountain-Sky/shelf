@@ -56,7 +56,7 @@ Live OpenAI requests send the bounded request/context and selected catalog metad
 
 Retained: Next.js, strict TypeScript, loopback scripts, temporary reading lists, usable current UI and test tooling. No wholesale frontend rewrite, invented SOAP abstraction, or new database was introduced.
 
-Remaining liabilities: small fixture catalog; simple English parser and substring retrieval; selection window limits; thin metadata; no production auth/rate control; limited accessibility evaluation; no durable/shared sessions; no enrichment implementation; no live AI or ILS validation. See the roadmap for gates rather than treating these as completed features.
+Remaining liabilities: small fixture catalog; simple English parser and substring retrieval; selection window limits; thin metadata; no production auth/rate control; limited accessibility evaluation; no durable/shared sessions; no enrichment implementation; no live AI or production ILS validation. See the roadmap for gates rather than treating these as completed features.
 
 ## Verification of this foundation
 

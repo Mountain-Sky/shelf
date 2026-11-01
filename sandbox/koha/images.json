@@ -1,0 +1,5 @@
+{
+  "kohaUpstreamManifest": "sha256:d45ca1a7f445d7ad1dc5f924506010b3422ae14ca1a7e40025b5db93578b77a0",
+  "dbImage": "mariadb@sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae",
+  "memcachedImage": "memcached@sha256:00b22604bd43a97cffff5aecc1ea0903f0753395b4895e64f9eacce1aec3d735"
+}
