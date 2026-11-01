@@ -6,7 +6,7 @@ import type {
   ResultBook,
   ResultEdition,
 } from "../types";
-import { recordKey } from "../types";
+import { recordKey, groupKey } from "../types";
 import { budgets, bounded } from "./budgets";
 import { branches } from "../config/branches";
 export async function resolveAvailability(
@@ -90,9 +90,7 @@ export async function resolveAvailability(
       };
     });
     holdings.push(...availability);
-    const key = r.record.work
-      ? JSON.stringify(["work", r.record.work.source, r.record.work.id])
-      : recordKey(r.record.ref);
+    const key = groupKey(r.record);
     if (key === plan.excludeResultId) continue;
     const editions = groups.get(key) ?? [];
     editions.push({

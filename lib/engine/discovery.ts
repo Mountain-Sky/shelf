@@ -1,6 +1,7 @@
 import type {
   Assessment,
   CatalogPage,
+  CatalogRecord,
   CatalogProvider,
   CatalogQuery,
   DiscoveryInput,
@@ -10,7 +11,7 @@ import type {
   Interpretation,
   ModelCall,
 } from "../types";
-import { recordKey } from "../types";
+import { recordKey, groupKey } from "../types";
 import { planDiscovery, queriesFor } from "./planning";
 import { normalize } from "./normalization";
 import { evidenceValues, rankRecords } from "./ranking";
@@ -38,6 +39,9 @@ export async function discover(
   const plan = planDiscovery(input);
   const notes: string[] = [];
   const calls: ModelCall[] = [];
+  const traceQueries: DiscoveryTrace["queries"] = [];
+  const collected: CatalogRecord[] = [];
+  let seedAttempts = 0;
   async function modelCall<T>(
     stage: ModelCall["stage"],
     fn: (signal: AbortSignal) => Promise<T>,
@@ -72,6 +76,8 @@ export async function discover(
   }
   if (
     !plan.clarification &&
+    !plan.browse &&
+    !plan.seedTitle &&
     plan.intent !== "known_item" &&
     input.action !== "branch"
   ) {
@@ -110,13 +116,83 @@ export async function discover(
   } else
     calls.push({ stage: "interpretation", status: "disabled", durationMs: 0 });
   mark("interpretationAndPlanning");
+  if (plan.seedTitle && !plan.clarification) {
+    const field = catalog.capabilities.fields.includes("title")
+      ? "title"
+      : "keyword";
+    const query: CatalogQuery = {
+      field,
+      text: plan.seedTitle,
+      limit: budgets.pageSize,
+    };
+    if (!catalog.capabilities.fields.includes(field)) {
+      plan.clarification =
+        "This catalog cannot look up the reference title. Try a title or subject search instead.";
+    } else {
+      seedAttempts++;
+      let page: CatalogPage;
+      try {
+        page = await bounded(budgets.catalogTimeoutMs, (s) =>
+          catalog.search(query, s),
+        );
+        if (!Array.isArray(page.records)) throw Error("Invalid seed response");
+        traceQueries.push({
+          query,
+          status: "success",
+          count: page.records.length,
+        });
+      } catch {
+        throw Error("Catalog unavailable");
+      }
+      const normalized = normalize(
+        page.records.slice(0, budgets.pageSize),
+        catalog,
+      );
+      notes.push(...normalized.notes);
+      const seedName = plan.seedTitle
+        .toLocaleLowerCase()
+        .replace(/[“”"']/g, "")
+        .trim();
+      const matches = normalized.records.filter(
+        (r) =>
+          r.title
+            .toLocaleLowerCase()
+            .replace(/[“”"']/g, "")
+            .trim() === seedName,
+      );
+      const identities = new Set(matches.map(groupKey));
+      if (identities.size !== 1) {
+        plan.clarification =
+          identities.size > 1
+            ? "I found more than one catalog work with that title. Search the title and select the edition you mean."
+            : "I could not verify that reference title in this catalog. Try its exact title, or describe a subject you want to explore.";
+      } else {
+        const seed = matches.find((r) => r.format === "print") ?? matches[0];
+        plan.excludeResultId = groupKey(seed);
+        plan.query = `Similar to ${seed.title}`;
+        plan.expandedQueries = [
+          ...new Set([...seed.subjects, ...plan.preferences.requiredSubjects]),
+        ].slice(0, budgets.terms);
+        if (!plan.expandedQueries.length)
+          plan.clarification =
+            "This reference title has no catalog subjects to support a similarity search. Tell me a subject or theme you would like.";
+        plan.queries = queriesFor(plan);
+        collected.push(...matches);
+        notes.push(
+          `Similarity starts from the catalog subjects of “${seed.title}”; it does not establish equivalent style or reading difficulty.`,
+        );
+      }
+    }
+  }
+  mark("seedRetrieval");
   const queries = plan.queries.filter((q) =>
     catalog.capabilities.fields.includes(q.field),
   );
   if (queries.length < plan.queries.length)
     notes.push("The provider does not support every planned search field.");
-  const traceQueries: DiscoveryTrace["queries"] = [];
-  const requests = plan.clarification ? [] : queries.slice(0, budgets.queries);
+  const requests = plan.clarification
+    ? []
+    : queries.slice(0, budgets.queries - seedAttempts);
   const pages = await parallelMap(
     requests,
     budgets.concurrency,
@@ -133,8 +209,7 @@ export async function discover(
       }
     },
   );
-  const collected = [];
-  let attempts = pages.length;
+  let attempts = pages.length + seedAttempts;
   for (const { query, page } of pages) {
     traceQueries.push({
       query,
@@ -210,7 +285,7 @@ export async function discover(
       "Reading difficulty, pacing, and suitability are not established by these catalog fields; consider clarifying the preference.",
     );
   mark("ranking");
-  if (ranked.length && !plan.clarification) {
+  if (ranked.length && !plan.clarification && !plan.browse) {
     const candidates = ranked.slice(0, 20).map((r) => r.record);
     const assessment = await modelCall<Assessment>(
       "assessment",
@@ -327,8 +402,14 @@ export async function discover(
     ),
     clarification: plan.clarification,
     suggestedActions: books.length
-      ? ["Only audiobooks", "Only mysteries", "More like the second one"]
-      : ["Try a title or author", "Broaden your constraints"],
+      ? [
+          "Only audiobooks",
+          "Only mysteries",
+          ...(books.length > 1
+            ? ["More like the second one"]
+            : ["Explore the collection"]),
+        ]
+      : ["Clear filters", "Explore the collection"],
     state,
     trace,
   };

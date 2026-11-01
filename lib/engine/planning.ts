@@ -3,7 +3,7 @@ import { interpret } from "./intent";
 import { branches } from "../config/branches";
 import { budgets } from "./budgets";
 const stop = new Set(
-  "the and for from with that this book books want need find show something more less today please about good great looking like read reading have can you are let me some than into your what should recommend available at in of on an is to by my it only preferably actually rather under pages one second first third audiobook audiobooks ebook ebooks print format formats paperback hardcover".split(
+  "the and for from with that this book books want need find show something more less today please about good great looking like read reading have can you are let me some than into your what should recommend available at in of on an is to by my it only preferably actually rather under pages one second first third audiobook audiobooks ebook ebooks print format formats paperback hardcover all any length availability include unavailable reset clear filters collection explore browse".split(
     " ",
   ),
 );
@@ -42,11 +42,21 @@ export function planDiscovery(input: DiscoveryInput): Plan {
     ...message.matchAll(/\b(?:result|recommendation)\s+([1-9]\d*)\b/gi),
   ];
   const references = [...ordinalReferences, ...numericReferences];
-  const refers = references.length > 0;
+  const explicitSelection = input.action === "similar";
+  const refers = references.length > 0 || explicitSelection;
+  const browse = /^(?:explore|browse)(?: the)? collection[.!]?$/i.test(message);
+  const seedMatch = !refers
+    ? /(?:^something (?:like|similar to)|^similar to|^books? like|\bI (?:loved|enjoyed|liked))\s+(.+?)(?=,|;|\s+but\b|\s+preferably\b|$)/i.exec(
+        message,
+      )
+    : null;
+  const seedTitle = seedMatch?.[1].replace(/^["“]|["”]$/g, "").trim();
   const refinement =
     Boolean(state) &&
+    !browse &&
+    !seedTitle &&
     (input.action === "branch" ||
-      /^(more|less|only|but|something|what about|show me|make it|instead|these|those|actually|prefer|not|no |under)/i.test(
+      /^(more|less|only|but|something|what about|show me|make it|instead|these|those|actually|prefer|not|no |under|all formats|any format|any length|any availability|include unavailable|clear filters|reset filters)/i.test(
         message,
       ) ||
       refers);
@@ -59,9 +69,20 @@ export function planDiscovery(input: DiscoveryInput): Plan {
         }
       : { availability: "any", requiredSubjects: [], excludedSubjects: [] };
   let query = refinement && state ? state.goal : message;
-  let terms = refinement && state ? [...state.terms] : termsFor(message);
+  let terms = browse
+    ? []
+    : refinement && state
+      ? [...state.terms]
+      : termsFor(message);
   let clarification: string | undefined;
   let excludeResultId = refinement ? state?.seedResultId : undefined;
+  if (/^(clear|reset) filters$/i.test(message)) {
+    p.availability = "any";
+    p.requiredSubjects = [];
+    p.excludedSubjects = [];
+    delete p.format;
+    delete p.maxPages;
+  }
   if (input.branch !== undefined) p.branch = input.branch || undefined;
   for (const branch of branches) {
     if (
@@ -97,13 +118,23 @@ export function planDiscovery(input: DiscoveryInput): Plan {
       (s) => !["fiction", "mystery", "fantasy", "science fiction"].includes(s),
     );
     p.requiredSubjects.push("nonfiction");
+    p.excludedSubjects = p.excludedSubjects.filter((s) => s !== "nonfiction");
     terms = terms.filter(
       (t) => !["fiction", "mystery", "fantasy", "science fiction"].includes(t),
     );
-  } else if (/\bfiction\b/i.test(message) && !/science fiction/i.test(message))
-    p.requiredSubjects = p.requiredSubjects.filter((s) => s !== "nonfiction");
+  } else if (
+    /\bfiction\b/i.test(message) &&
+    !/science fiction/i.test(message)
+  ) {
+    p.requiredSubjects = [
+      ...p.requiredSubjects.filter((s) => s !== "nonfiction"),
+      "fiction",
+    ];
+    p.excludedSubjects = [...new Set([...p.excludedSubjects, "nonfiction"])];
+    terms = terms.filter((t) => t !== "nonfiction");
+  }
   const exclusion =
-    /\b(?:no|not|exclude|without)\s+(mystery|mysteries|fantasy|romance|horror|nonfiction)\b/i.exec(
+    /\b(?:no|not|exclude|without)\s+(science fiction|fiction|mystery|mysteries|fantasy|romance|horror|nonfiction)\b/i.exec(
       message,
     );
   if (exclusion) {
@@ -125,8 +156,11 @@ export function planDiscovery(input: DiscoveryInput): Plan {
           : word === "third"
             ? 2
             : Number(word) - 1;
-    const selected =
-      references.length === 1 ? state?.snapshot[index] : undefined;
+    const selected = explicitSelection
+      ? state?.snapshot.find((result) => result.id === input.selectedResultId)
+      : references.length === 1
+        ? state?.snapshot[index]
+        : undefined;
     if (!selected)
       clarification =
         "Which displayed title do you mean? Select a title or name it so I can use the right reference.";
@@ -142,6 +176,10 @@ export function planDiscovery(input: DiscoveryInput): Plan {
       }
     }
   }
+  if (/\bmore like (?:this|that)\b/i.test(message) && !explicitSelection) {
+    clarification =
+      "Which displayed title do you mean? Choose More like this on a book, or name the title.";
+  }
   if (/shorter/i.test(message) && !refers)
     clarification =
       "Which title should I compare the length with, or what is your maximum page count?";
@@ -151,9 +189,11 @@ export function planDiscovery(input: DiscoveryInput): Plan {
     .filter((t) => !p.excludedSubjects.includes(t))
     .slice(-budgets.terms);
   p.requiredSubjects = [...new Set(p.requiredSubjects)].slice(0, budgets.terms);
-  const intent = interpret(message);
+  const intent = refers || seedTitle ? "recommendation" : interpret(message);
   const plan: Plan = {
     intent,
+    browse,
+    seedTitle,
     query: query.slice(0, 500),
     expandedQueries: terms,
     preferences: p,
@@ -177,11 +217,32 @@ export function planDiscovery(input: DiscoveryInput): Plan {
 }
 export function queriesFor(plan: Plan): CatalogQuery[] {
   const queries: CatalogQuery[] = [];
+  if (plan.browse)
+    return [{ field: "browse", text: "", limit: budgets.pageSize }];
   const add = (field: CatalogQuery["field"], text: string) =>
     queries.push({ field, text: text.slice(0, 500), limit: budgets.pageSize });
-  const identifier = plan.query.match(/\b(?:97[89])?\d[\d -]{8,16}[\dX]\b/i);
-  if (identifier) add("identifier", identifier[0].replace(/[ -]/g, ""));
-  else if (plan.intent === "known_item")
+  const identifier =
+    /^(?:ISBN(?:-1[03])?:?\s*)?((?:97[89][ -]?)?\d[\d -]{8,16}[\dX])$/i.exec(
+      plan.query.trim(),
+    );
+  if (identifier)
+    return [
+      {
+        field: "identifier",
+        text: identifier[1].replace(/[ -]/g, "").toUpperCase(),
+        limit: budgets.pageSize,
+      },
+    ];
+  const author =
+    /^(?:(?:find|show me)\s+)?(?:books?\s+by|author:)\s*(.+)$/i.exec(
+      plan.query,
+    );
+  if (author)
+    return [{ field: "author", text: author[1], limit: budgets.pageSize }];
+  if (
+    plan.intent === "known_item" &&
+    !/^(?:books? by|author:)/i.test(plan.query)
+  )
     add(
       "title",
       plan.query.replace(/^(find|where is|do you have|search for)\s+/i, ""),

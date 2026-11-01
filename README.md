@@ -1,19 +1,23 @@
 # Shelf Discovery Lab
 
-A local library discovery application for the Loudoun County Public Library prototype. Search by title, subject or mood; refine your question; inspect deterministic rankings; and save a temporary reading list.
+A working visual library discovery demo for the Loudoun County Public Library prototype. Explore a bookshelf, search or refine in natural language, compare editions, and keep a temporary reading list. The full demo reads 32 works / 44 edition records through an independent local catalog service with persistent synthetic holdings.
 
 **All records are demo fixtures and all branch counts are synthetic. No live LCPL catalog, CARL•X connection, patron accounts or holds are implemented.** Book cover panels are typographic placeholders, not official cover art.
 
 ## Local setup (macOS, Windows or Linux)
 
-Install Node.js 22 LTS or newer (minimum 20.9), then open a terminal in this repository:
+Install Node.js 24 LTS, then open a terminal in this repository:
 
 ```sh
 npm ci
-npm run dev
+npm run demo
 ```
 
-Visit http://127.0.0.1:3000. No configuration or API key is needed for discovery. Scripts bind to loopback, not the public network. Stop with Ctrl+C.
+Visit http://127.0.0.1:3000. The command starts Shelf and its independent catalog simulator; no configuration or AI key is needed. Both bind to loopback. Stop with Ctrl+C. If port 3000 is occupied, use `npm run demo -- --port 3001`.
+
+For the reviewer walkthrough and password-protected container package, see [Private demo](docs/private-demo.md). For the stock-change demonstration, see [Catalog sandbox](docs/catalog-sandbox.md). The simulator is not a full ILS; [Koha evaluation](docs/koha-evaluation.md) documents the separate integration path.
+
+`npm run dev` remains available as a simpler embedded-fixture development mode. The recommended complete demo is `npm run demo`.
 
 Optional configuration: on macOS/Linux run `cp .env.example .env.local`; on Windows PowerShell run `Copy-Item .env.example .env.local`. Keep `CATALOG_MODE=mock`. Never commit `.env.local` or prefix a secret with `NEXT_PUBLIC_`.
 
@@ -23,10 +27,10 @@ Optional configuration: on macOS/Linux run `cp .env.example .env.local`; on Wind
 npm test
 npm run build
 npm run typecheck
-npm run start
+npm run demo:start
 ```
 
-Build before starting production mode; stop the development server first to free port 3000. `npm run test:e2e` runs Chromium interaction checks against a production server on port 3100, after `npm run build`. In restricted environments, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can point to an installed Chromium executable. Otherwise, first install the test browser with `npx playwright install chromium` (Linux may additionally require browser system libraries).
+Build before starting production mode; stop the development demo first to free ports 3000 and 4310. `npm run test:e2e` runs Chromium interaction checks against production demos on ports 3100 and 3102, including protected access and independent catalog stock changes, after `npm run build`. In restricted environments, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can point to an installed Chromium executable. Otherwise, first install the test browser with `npx playwright install chromium` (Linux may additionally require browser system libraries).
 
 The committed npm lockfile makes installs reproducible. `npm audit` checks known dependency advisories; a clean result does not establish complete application security. Do not run dev and production builds concurrently in the same checkout because they share `.next`.
 

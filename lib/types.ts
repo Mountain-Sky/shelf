@@ -85,10 +85,13 @@ export type SessionState = {
 export type DiscoveryInput = {
   message: string;
   branch?: string;
-  action?: "search" | "branch";
+  action?: "search" | "branch" | "similar";
+  selectedResultId?: string;
   state?: SessionState;
 };
 export type Plan = {
+  browse?: boolean;
+  seedTitle?: string;
   intent: Intent;
   query: string;
   expandedQueries: string[];
@@ -204,4 +207,11 @@ export type DiscoveryResult = {
 };
 export function recordKey(ref: RecordRef): string {
   return JSON.stringify([ref.provider, ref.id]);
+}
+
+/** Stable presentation identity only when an adapter supplies a trusted work relation. */
+export function groupKey(record: CatalogRecord): string {
+  return record.work
+    ? JSON.stringify(["work", record.work.source, record.work.id])
+    : recordKey(record.ref);
 }

@@ -1,5 +1,6 @@
 import { discover } from "../engine/discovery";
 import { mockProvider } from "../providers/mock";
+import { HttpDemoProvider } from "../providers/http-demo";
 import { CarlXProvider } from "../providers/carlx";
 import { OpenAIIntelligence } from "../ai/openai";
 import { SessionStore } from "./sessions";
@@ -13,7 +14,8 @@ const sessions = (globalStore.shelfSessions ??= new SessionStore());
 export type SearchRequest = {
   message: string;
   branch?: string;
-  action?: "search" | "branch";
+  action?: "search" | "branch" | "similar";
+  selectedResultId?: string;
   session?: { id: string; revision: number };
 };
 export function validRequest(value: unknown): value is SearchRequest {
@@ -32,7 +34,19 @@ export function validRequest(value: unknown): value is SearchRequest {
     return false;
   if (
     v.action !== undefined &&
-    !["search", "branch"].includes(v.action as string)
+    !["search", "branch", "similar"].includes(v.action as string)
+  )
+    return false;
+  if (
+    v.selectedResultId !== undefined &&
+    (typeof v.selectedResultId !== "string" ||
+      !v.selectedResultId ||
+      v.selectedResultId.length > 1000)
+  )
+    return false;
+  if (
+    v.action === "similar" &&
+    (typeof v.selectedResultId !== "string" || !v.session)
   )
     return false;
   if (v.session !== undefined) {
@@ -50,10 +64,17 @@ export function validRequest(value: unknown): value is SearchRequest {
 }
 function dependencies(ai: boolean) {
   const mode = process.env.CATALOG_MODE ?? "mock";
-  if (!["mock", "carlx"].includes(mode))
+  if (!["mock", "http-demo", "carlx"].includes(mode))
     throw Error("Unsupported catalog configuration");
   return {
-    catalog: mode === "carlx" ? new CarlXProvider() : mockProvider,
+    catalog:
+      mode === "carlx"
+        ? new CarlXProvider()
+        : mode === "http-demo"
+          ? new HttpDemoProvider(
+              process.env.DEMO_CATALOG_URL || "http://127.0.0.1:4310",
+            )
+          : mockProvider,
     intelligence:
       ai && process.env.OPENAI_API_KEY
         ? new OpenAIIntelligence(
@@ -96,6 +117,7 @@ export async function search(request: SearchRequest) {
       ...response,
       session,
       branch: result.state.preferences.branch ?? "",
+      preferences: result.state.preferences,
       trace:
         process.env.SHELF_INSPECTOR === "1"
           ? diagnosticTrace(trace)

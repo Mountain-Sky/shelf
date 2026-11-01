@@ -1,6 +1,6 @@
 # UX strategy
 
-Status: agreed product direction; the existing UI remains a transition client while engine behavior is established.
+Status: the bookshelf-first demo is now implemented. Patron research, full accessibility evaluation and final production design remain outstanding.
 
 ## Visual discovery first
 
@@ -22,7 +22,7 @@ Every interaction should explain what changed: selected seed title, preferred br
 | Save a reading list                        | Keep temporary explicit selection               | Clear/remove/copy controls; explain session-only retention                                |
 | Weak or empty results                      | Report missing evidence and constraints         | Offer specific broadening or clarification actions, not plausible filler                  |
 
-The final explicit selection API and comparison interaction will be implemented in the UX milestone. Current natural-language ordinal references and revisioned snapshots establish the underlying behavior, but do not replace that design work.
+Explicit per-card selection and a comparison dialog are implemented in the demo. Selection is validated against the server snapshot; comparison retains the selected edition and its observed availability. Natural-language ordinal references remain supported.
 
 ## Presentation and trust
 
@@ -38,4 +38,4 @@ Automated browser checks currently cover basic search/refinement, branch changes
 
 ## Current versus next
 
-Current additions keep the existing screen functional against the new engine: versioned session requests, centrally configured branches, notices, opt-in diagnostics and an edition disclosure. A dynamic bookshelf, comparisons, undoable discovery trails, source-supported covers, and polished transitions remain future design work. Do not preserve the existing chat-first layout simply because it already exists.
+Current additions keep the existing screen functional against the new engine: versioned session requests, centrally configured branches, notices, opt-in diagnostics and an edition disclosure. The demo now includes the visual bookshelf, comparisons, a compact discovery trail, type-based illustrative covers, and responsive transitions. Undoable trail navigation and source-supported official covers remain future work. Do not preserve the existing chat-first layout simply because it already exists.

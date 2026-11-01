@@ -415,3 +415,151 @@ test("page numbers cannot hijack ordinal references; multiple references clarify
     }).clarification,
   );
 });
+
+test("initial collection browse is useful and makes no model calls", async () => {
+  let calls = 0;
+  const intelligence: Intelligence = {
+    ...ai,
+    async interpret() {
+      calls++;
+      throw Error("must not call");
+    },
+    async assess() {
+      calls++;
+      throw Error("must not call");
+    },
+  };
+  const r = await discover(
+    { message: "Explore the collection" },
+    { catalog: mockProvider, intelligence },
+  );
+  assert.ok(r.books.length > 0);
+  assert.equal(calls, 0);
+  assert.equal(r.trace.queries[0].query.field, "browse");
+  assert.ok(r.trace.queries.length <= budgets.queries);
+});
+test("explicit similarity accepts only IDs from the last displayed snapshot", async () => {
+  const a = await search("Explore the collection");
+  const selected = a.books[0];
+  const b = await discover(
+    {
+      message: "More like this",
+      action: "similar",
+      selectedResultId: selected.id,
+      state: a.state,
+    },
+    { catalog: mockProvider },
+  );
+  assert.equal(b.state.seedResultId, selected.id);
+  assert.ok(b.books.length);
+  assert.ok(!b.books.some((book) => book.id === selected.id));
+  const invalid = await discover(
+    {
+      message: "More like this",
+      action: "similar",
+      selectedResultId: "arbitrary-record",
+      state: a.state,
+    },
+    { catalog: mockProvider },
+  );
+  assert.match(invalid.clarification ?? "", /Which displayed title/);
+  assert.equal(invalid.trace.queries.length, 0);
+  assert.deepEqual(invalid.state, a.state);
+});
+test("named-title similarity retrieves a verified seed then explores its subjects", async () => {
+  const r = await search("Something like Project Hail Mary");
+  assert.equal(r.trace.queries[0].query.field, "title");
+  assert.equal(r.trace.queries[0].query.text, "Project Hail Mary");
+  assert.ok(r.books.length);
+  assert.ok(!r.books.some((book) => book.title === "Project Hail Mary"));
+  assert.ok(r.books.some((book) => book.title === "The Martian"));
+  assert.ok(r.trace.queries.length <= budgets.queries);
+});
+test("compound seed request retains availability preference and admits uncertain style evidence", async () => {
+  const r = await search(
+    "I loved Project Hail Mary but want something less technical, preferably available at Rust",
+  );
+  assert.ok(r.books.length);
+  assert.equal(r.state.preferences.branch, "RUST");
+  assert.equal(r.state.preferences.availability, "prefer");
+  assert.ok(!r.books.some((b) => b.title === "Project Hail Mary"));
+  assert.ok(r.notices.some((n) => n.includes("difficulty")));
+});
+test("unknown seed asks clarification rather than inventing a reference record", async () => {
+  const r = await search("Something like An Invented Unknown Reference");
+  assert.ok(r.clarification);
+  assert.equal(r.books.length, 0);
+  assert.equal(r.trace.queries.length, 1);
+});
+test("seed search and pagination share one global request budget", async () => {
+  let count = 0;
+  const catalog: CatalogProvider = {
+    ...mockProvider,
+    async search(q, s) {
+      count++;
+      const page = await mockProvider.search(q, s);
+      return { ...page, nextCursor: "next-" + count };
+    },
+  };
+  const r = await search(
+    "Something like Project Hail Mary",
+    undefined,
+    catalog,
+  );
+  assert.ok(r.books.length);
+  assert.ok(count <= budgets.queries);
+  assert.equal(r.trace.queries.length, count);
+});
+test("UI format and availability controls replace and remove active constraints", async () => {
+  const a = await search("Explore the collection");
+  const b = await search("Actually only audiobooks", a.state);
+  assert.ok(b.books.length);
+  assert.ok(b.books.every((book) => book.format === "audiobook"));
+  const c = await search("Actually print", b.state);
+  assert.ok(c.books.length);
+  assert.equal(c.state.preferences.format, "print");
+  const d = await search("Actually all formats", c.state);
+  assert.equal(d.state.preferences.format, undefined);
+  const only = await search("Actually only available", d.state);
+  assert.equal(only.state.preferences.availability, "only");
+  const prefer = await search("Actually prefer available", only.state);
+  assert.equal(prefer.state.preferences.availability, "prefer");
+  const all = await search("Actually include unavailable", prefer.state);
+  assert.equal(all.state.preferences.availability, "any");
+});
+test("author and ISBN requests use dedicated catalog query fields", async () => {
+  const authored = await search("author: Andy Weir");
+  assert.equal(authored.trace.queries[0].query.field, "author");
+  assert.ok(authored.books.length);
+  assert.ok(authored.books.every((b) => b.author.includes("Andy Weir")));
+  const isbn = "9780261103344";
+  const book = {
+    ...catalogRecords[7],
+    identifiers: [{ scheme: "isbn", value: isbn }],
+  };
+  const exact = await search("ISBN: " + isbn, undefined, {
+    ...mockProvider,
+    async search() {
+      return { records: [book] };
+    },
+  });
+  assert.equal(exact.trace.queries[0].query.field, "identifier");
+  assert.equal(exact.trace.queries[0].query.text, isbn);
+  assert.equal(exact.books[0].title, book.title);
+});
+
+test("fiction and nonfiction switches use explicit catalog subjects", async () => {
+  const a = await search("Explore the collection");
+  const b = await search("Actually nonfiction", a.state);
+  assert.ok(b.books.length);
+  assert.ok(b.books.every((book) => book.subjects.includes("nonfiction")));
+  const c = await search("Actually fiction", b.state);
+  assert.ok(c.books.length);
+  assert.ok(
+    c.books.every(
+      (book) =>
+        book.subjects.includes("fiction") &&
+        !book.subjects.includes("nonfiction"),
+    ),
+  );
+});

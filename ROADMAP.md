@@ -14,6 +14,10 @@ Evaluate deterministic and bounded-model behavior against the same corpus. Imple
 
 Acceptance: no hard-constraint violations or fabricated facts in the corpus; LCPL agrees relevance and clarification expectations. Establish numerical relevance and latency targets from baseline measurements, not arbitrary claims.
 
+## Current demo progress
+
+Implemented beyond the foundation: a 32-work / 44-record independent HTTP catalog simulator with persistent synthetic stock; verified-title seed similarity; explicit displayed-result selection; a bookshelf-first responsive UI with comparison, reading lists and filters; and a private Node-container package. The simulator is not Koha. Live AI, real ILS mappings, private hosting publication, and full accessibility/relevance acceptance remain unverified.
+
 ## 3. Full off-network catalog example
 
 Retain fast fixture tests. Use a private Koha instance as the preferred integration proving ground if its setup is practical on the development host. Inspect the selected version's supported APIs and authentication before implementing a small adapter; do not assume routes from memory.

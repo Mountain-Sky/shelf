@@ -1,6 +1,6 @@
 # Shelf architecture
 
-Status: engine foundation implemented; integration, enrichment and final UX milestones remain proposed. This document supersedes the earlier prototype architecture summary.
+Status: engine foundation and visual demo implemented, including an independent HTTP catalog simulator. Real ILS integration, enrichment and final patron UX validation remain future milestones. This document supersedes the earlier prototype architecture summary.
 
 ## Boundaries
 
@@ -21,7 +21,7 @@ The engine receives dependencies explicitly. It has no `process.env`, HTTP calls
 
 ## Public application contracts
 
-`POST /api/chat` remains a compatibility URL, not an architectural chat-to-catalog connection. Its body is `{ message, branch?, action?: "search" | "branch", session?: { id, revision } }`. Messages are nonempty and at most 500 characters; streamed requests are bounded at 8 KB. Branch changes reuse server-owned context. `previousQuery` is no longer the context contract.
+`POST /api/chat` remains a compatibility URL, not an architectural chat-to-catalog connection. Its body is `{ message, branch?, action?: "search" | "branch", session?: { id, revision } }`. Messages are nonempty and at most 500 characters; streamed requests are bounded at 8 KB. Branch changes reuse server-owned context. An explicit `similar` action carries `selectedResultId`, which must match a group in the server’s last displayed snapshot. Responses also expose active `preferences` for visible UI controls. `previousQuery` is no longer the context contract.
 
 The response contains display groups (`books`), grounded text, notices, optional clarification, suggested actions, source, effective branch, and an updated session token/revision. Each group includes its selected record ID, retained editions, separate holdings, and evidence. Internal session state is never returned. When a response asks for clarification, the UI preserves its displayed cards and the engine preserves the corresponding snapshot. Engine diagnostics are omitted unless `SHELF_INSPECTOR=1`.
 
@@ -63,3 +63,9 @@ Remaining liabilities: small fixture catalog; simple English parser and substrin
 On Linux with Node 24.19.0: all 34 architecture/engine/API/contract tests, all four production Chromium browser tests, strict TypeScript and the Next.js production build passed. `npm audit` reported zero known vulnerabilities. Browser tests used the installed Chromium via `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium`.
 
 These results verify the local fixture-backed implementation. They do not verify live OpenAI calls, Koha, CARL•X mappings, macOS/Windows execution, complete accessibility compliance or library recommendation quality. No public deployment or patron-system interaction occurred.
+
+## Complete demo additions
+
+`npm run demo` starts an independent loopback catalog simulator plus Shelf. `http-demo` is a separately validated transport adapter; failures do not silently fall back to embedded fixtures. The simulator persists synthetic stock overrides, has no HTTP mutation endpoint, and is not a Koha/CARL•X implementation. The visual client supports explicit similarity, comparison, format/availability controls, edition disclosure, temporary lists and discovery trails. Named-title similarity now verifies a seed through catalog retrieval before exploring its subjects.
+
+The optional private-demo proxy protects pages and APIs with a server-only shared reviewer password. The container defaults to private access, fails closed without sufficient configuration, and exposes only the app port. Hosting requires HTTPS and one persistent Node replica because sessions remain process-local. This is not patron authentication, individual invitation management or a public production deployment.

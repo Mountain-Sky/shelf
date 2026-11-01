@@ -12,9 +12,21 @@ export function evidenceValues(
 }
 export function rankRecords(records: CatalogRecord[], plan: Plan): Ranked[] {
   const p = plan.preferences;
+  const authorQuery = plan.queries.find((q) => q.field === "author");
+  const identifierQuery = plan.queries.find((q) => q.field === "identifier");
   return records
     .filter(
       (r) =>
+        (!authorQuery ||
+          r.contributors.some((c) =>
+            c.name.toLowerCase().includes(authorQuery.text.toLowerCase()),
+          )) &&
+        (!identifierQuery ||
+          r.identifiers.some(
+            (i) =>
+              i.value.replace(/[- ]/g, "").toUpperCase() ===
+              identifierQuery.text.toUpperCase(),
+          )) &&
         (!p.format || r.format === p.format) &&
         p.requiredSubjects.every((s) => r.subjects.includes(s)) &&
         !p.excludedSubjects.some((s) => r.subjects.includes(s)) &&

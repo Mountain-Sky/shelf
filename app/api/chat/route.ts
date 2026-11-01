@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
       const parsed = new URL(origin);
       allowedOrigin =
         parsed.origin ===
-        `${req.nextUrl.protocol}//${req.headers.get("host") ?? req.nextUrl.host}`;
+        (process.env.SHELF_PUBLIC_ORIGIN ||
+          `${req.nextUrl.protocol}//${req.headers.get("host") ?? req.nextUrl.host}`);
     } catch {
       allowedOrigin = false;
     }
