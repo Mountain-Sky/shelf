@@ -8,12 +8,8 @@ build = ["sh", "-c", "npm ci --include=dev && npm run build"]
 run = ["sh", "-c", "npm run replit:start -- --port 5000"]
 
 [[ports]]
-localPort = 3000
-externalPort = 80
-
-[[ports]]
 localPort = 5000
-externalPort = 5000
+externalPort = 80
 
 [workflows]
 runButton = "Project"
@@ -31,10 +27,9 @@ args = "Shelf Next.js preview"
 name = "Shelf Next.js preview"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run replit:dev -- --port 5000"
-waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
