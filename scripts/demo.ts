@@ -14,7 +14,33 @@ function port(value: string | undefined, fallback: number) {
   return parsed;
 }
 async function main() {
-  const appPort = port(option("--port") ?? process.env.SHELF_PORT, 3000);
+  if (args.includes("--replit")) {
+    process.env.SHELF_HOST = "0.0.0.0";
+    process.env.SHELF_ACCESS = "private";
+    process.env.SHELF_INSPECTOR = "0";
+    if (
+      !process.env.SHELF_PUBLIC_ORIGIN &&
+      process.env.REPLIT_DEV_DOMAIN &&
+      !args.includes("--production")
+    )
+      process.env.SHELF_PUBLIC_ORIGIN = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+    if (!process.env.SHELF_PUBLIC_ORIGIN)
+      throw Error(
+        "Set SHELF_PUBLIC_ORIGIN to this Replit app's exact HTTPS URL before starting.",
+      );
+    const origin = new URL(process.env.SHELF_PUBLIC_ORIGIN);
+    if (
+      origin.protocol !== "https:" ||
+      origin.origin !== process.env.SHELF_PUBLIC_ORIGIN
+    )
+      throw Error(
+        "SHELF_PUBLIC_ORIGIN must be an HTTPS origin without a path or trailing slash.",
+      );
+  }
+  const appPort = port(
+    option("--port") ?? process.env.SHELF_PORT ?? process.env.PORT,
+    3000,
+  );
   const catalogPort = port(
     option("--catalog-port") ?? process.env.SHELF_CATALOG_PORT,
     4310,

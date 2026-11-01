@@ -4,6 +4,10 @@ A working visual library discovery demo for the Loudoun County Public Library pr
 
 **All records are demo fixtures and all branch counts are synthetic. No live LCPL catalog, CARL•X connection, patron accounts or holds are implemented.** Book cover panels are typographic placeholders, not official cover art.
 
+## Replit deployment
+
+Import this repository from GitHub and follow [Private demo on Replit](docs/replit.md). The committed configuration uses a password-protected Reserved VM; no Cloudflare setup is needed. Synthetic holdings reset on each deployment startup.
+
 ## Local setup (macOS, Windows or Linux)
 
 Install Node.js 24 LTS, then open a terminal in this repository:

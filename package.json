@@ -13,6 +13,8 @@
     "format": "prettier --write app lib scripts tests docs \"*.md\" playwright.config.ts proxy.ts compose.yaml",
     "demo": "tsx scripts/demo.ts",
     "demo:start": "tsx scripts/demo.ts --production",
+    "replit:dev": "tsx scripts/demo.ts --replit",
+    "replit:start": "tsx scripts/demo.ts --replit --production --reset",
     "catalog:serve": "tsx scripts/catalog-server.ts serve",
     "catalog:set-stock": "tsx scripts/catalog-server.ts set-stock",
     "catalog:reset": "tsx scripts/catalog-server.ts reset"

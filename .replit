@@ -1,0 +1,12 @@
+entrypoint = "app/page.tsx"
+modules = ["nodejs-22"]
+run = "npm run replit:dev"
+
+[deployment]
+deploymentTarget = "vm"
+build = ["sh", "-c", "npm ci --include=dev && npm run build"]
+run = ["sh", "-c", "npm run replit:start"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
