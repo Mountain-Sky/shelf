@@ -1,44 +1,52 @@
-# Shelf Discovery Lab — LCPL prototype
+# Shelf Discovery Lab
 
-An AI-native library discovery experiment, designed to run locally on macOS or Windows. **No production CarlX connection is included.** All book and branch availability data is synthetic prototype data.
+A local library discovery application for the Loudoun County Public Library prototype. Search by title, subject or mood; refine your question; inspect deterministic rankings; and save a temporary reading list.
 
-## Run locally
+**All records are demo fixtures and all branch counts are synthetic. No live LCPL catalog, CARL•X connection, patron accounts or holds are implemented.** Book cover panels are typographic placeholders, not official cover art.
 
-Node.js 20.9+ recommended. From the extracted folder (the one containing `package.json`):
+## Local setup (macOS, Windows or Linux)
 
-```bash
-npm install
-cp .env.example .env.local
+Install Node.js 22 LTS or newer (minimum 20.9), then open a terminal in this repository:
+
+```sh
+npm ci
 npm run dev
 ```
 
-On Windows PowerShell, use `Copy-Item .env.example .env.local` instead of `cp`.
-Open http://127.0.0.1:3000. You don't need an AI API key to use the deterministic demo pipeline. Optionally put `OPENAI_API_KEY` in `.env.local` to enable short natural-language explanations. Requests then send the patron's query and demo candidate metadata to OpenAI; don't test with patron PII.
+Visit http://127.0.0.1:3000. No configuration or API key is needed. Scripts bind to loopback, not the public network. Stop with Ctrl+C.
 
-## What works
+Optional configuration: on macOS/Linux run `cp .env.example .env.local`; on Windows PowerShell run `Copy-Item .env.example .env.local`. Keep `CATALOG_MODE=mock`. Never commit `.env.local` or prefix a secret with `NEXT_PUBLIC_`.
 
-- Modern book discovery UI and demo catalog search
-- Branch selection for three sample branches (not a full LCPL branch directory)
-- Follow-up query refinement and query expansion
-- Deterministic relevance heuristic
-- Discovery Engine inspector showing intent, query, candidate count, rankings, and timing
-- Temporary client-side shortlist and copy reading list
-- Optional OpenAI-generated explanation
+## Checks and production mode
 
-## Architecture
+```sh
+npm test
+npm run build
+npm run typecheck
+npm run start
+```
 
-- `app/page.tsx` — client-side interface and temporary session state
-- `app/api/chat/route.ts` — orchestrates discovery and optional explanation
-- `lib/discovery.ts` — intent, query planning, ranking and inspectable trace
-- `lib/catalog.ts` — mock catalog / placeholder for official CarlX SOAP adapter
-- `app/api/catalog/search/route.ts` — direct catalog search API
+Build before starting production mode; stop the development server first to free port 3000. `npm run test:e2e` runs Chromium interaction checks against a production server on port 3100, after `npm run build`. In restricted environments, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can point to an installed Chromium executable. Otherwise, first install the test browser with `npx playwright install chromium` (Linux may additionally require browser system libraries).
 
-The long-term boundary is `searchCatalog(query, branch): Promise<Book[]>`. Do not add credentials to browser code. The adapter must use *verified* CarlX SOAP method names and XML schemas, map records to `Book`, and query item availability separately where appropriate. Do not set `CATALOG_MODE=carlx` until implemented; it deliberately errors in that mode rather than fabricating data.
+The committed npm lockfile makes installs reproducible. `npm audit` checks known dependency advisories; a clean result does not establish complete application security. Do not run dev and production builds concurrently in the same checkout because they share `.next`.
 
-## Security / deployment
+## Using Shelf
 
-Local demo only; not approved as a publicly accessible system. Before LCPL testing or deployment: replace toy retrieval/ranking, evaluate accessibility, pin and audit dependencies, add request limits and timeouts, apply SSO/security controls to administrator diagnostics, validate model claims against catalog facts, review privacy and data retention, and perform authorized load testing. Leave patron account actions and holds out of scope until authentication/authorization is designed.
+- Search for “Project Hail Mary”, “gentle science fiction”, or “adventure for kids”. Unmatched queries produce an honest empty result.
+- Follow-up prompts combine with the previous query. “Only mysteries” and children requests apply explicit fixture subject filters. This is a small English heuristic system, not semantic search or age-suitability advice.
+- Changing the branch reruns the current query. Availability is resolved separately: unavailable books remain discoverable. Zero copies and unknown availability are distinct.
+- Save/remove titles and copy or clear your reading list. Lists and conversations are in browser memory only and disappear on reload.
+- Open Discovery Engine for the plan, retrieved candidates, deduplication/ranking results, model status and stage timings. This optional view is for the local developer; it is not an authenticated administration system.
 
-## CarlX integration preparation
+## Optional AI
 
-Bring a known-working **redacted** SOAP search request, response, and any holdings method documentation. Build the adapter on the work network. Avoid reverse engineering public interfaces if a supported API is available.
+Put `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in `.env.local`, then restart. The default model is `gpt-4.1-mini`. The server sends only the current combined query and candidate IDs, titles, subjects and summaries to OpenAI with `store:false`. Do not enter patron personal information. Provider retention policies still apply.
+
+AI can select up to three existing candidate IDs. Its structured output is validated against retrieved records; all prose is composed by the server from catalog facts. It cannot create new bibliographic records or availability claims. Errors, timeouts or invalid selections fall back to deterministic text. No key means no model requests. Live model connectivity requires your own key and has not been verified here; mocked success/error responses are tested.
+
+## Documentation
+
+- [Architecture and audit](docs/architecture.md)
+- [CARL•X integration requirements](docs/carlx.md)
+
+This is a local prototype. Public deployment, patron accounts and live holds are out of scope.

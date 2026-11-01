@@ -1,20 +1,69 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { discover } from '../../../../lib/discovery';
-export const runtime='nodejs';
-export async function POST(req:NextRequest){
- try{
-  const body=await req.json();
-  const message=typeof body.message==='string'?body.message.trim().slice(0,500):'';
-  const previousQuery=typeof body.previousQuery==='string'?body.previousQuery.slice(0,500):'';
-  const branch=typeof body.branch==='string'?body.branch.toUpperCase():'';
-  if(!message||!['','ASH','RUST','PUR'].includes(branch))return NextResponse.json({error:'Invalid request'},{status:400});
-  const {books,trace}=await discover(message,branch,previousQuery);
-  let reply=`I found ${books.length} demonstration titles to explore${branch?' for '+branch:''}. These are not live LCPL records. Try refining your request, or open the Discovery Engine panel to see how results were selected.`;
-  const key=process.env.OPENAI_API_KEY;
-  if(key&&books.length){
-   const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_MODEL||'gpt-5.4-mini',store:false,instructions:'You are Shelf, a helpful public library discovery guide. Only discuss supplied titles; do not invent books or imply fake holdings are real. In this prototype all catalog holdings are DEMO fixtures. In 90 words or fewer, briefly explain which candidates might suit the request, indicate clearly this is demo data, and suggest one concise refinement. Never ask for patron data.',input:JSON.stringify({patronRequest:message,branch,candidates:books.map(b=>({title:b.title,author:b.author,summary:b.summary,subjects:b.subjects}))})})});
-   if(response.ok){const data=await response.json();reply=data.output_text||data.output?.flatMap((x:{content?:{type:string;text?:string}[]})=>x.content??[]).filter((x:{type:string})=>x.type==='output_text').map((x:{text?:string})=>x.text).join(' ')||reply;}
+import { NextRequest, NextResponse } from "next/server";
+import { discover } from "../../../lib/discovery";
+import type { Branch } from "../../../lib/types";
+export const runtime = "nodejs";
+export async function POST(req: NextRequest) {
+  try {
+    const reader = req.body?.getReader();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > 8000) {
+          await reader.cancel();
+          return NextResponse.json(
+            { error: "Request too large" },
+            { status: 413 },
+          );
+        }
+        chunks.push(value);
+      }
+    }
+    const raw = Buffer.concat(chunks).toString("utf8");
+    let body: unknown;
+    try {
+      body = JSON.parse(raw);
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+    if (!body || typeof body !== "object")
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    const {
+      message,
+      previousQuery = "",
+      branch = "",
+    } = body as Record<string, unknown>;
+    if (
+      typeof message !== "string" ||
+      !message.trim() ||
+      message.length > 500 ||
+      typeof previousQuery !== "string" ||
+      previousQuery.length > 1000 ||
+      typeof branch !== "string" ||
+      !["", "ASH", "RUST", "PUR"].includes(branch)
+    )
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    const result = await discover(
+      message.trim(),
+      branch as Branch,
+      previousQuery,
+      {
+        ai: {
+          key: process.env.OPENAI_API_KEY,
+          model: process.env.OPENAI_MODEL,
+        },
+      },
+    );
+    return NextResponse.json(result, {
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Discovery is unavailable. Please try again." },
+      { status: 503 },
+    );
   }
-  return NextResponse.json({reply,books,source:trace.catalogMode,trace});
- }catch(e){console.error('Discovery failed',e);return NextResponse.json({error:'Unable to complete discovery request'},{status:503});}
 }
