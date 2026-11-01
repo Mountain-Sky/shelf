@@ -1,0 +1,25 @@
+kind = "web"
+previewPath = "/"
+title = "Shelf | Library discovery"
+description = "A library discovery demo for exploring books, refining searches, comparing editions, and keeping a temporary reading list."
+version = "1.0.0"
+id = "artifacts/shelf"
+router = "path"
+
+[[services]]
+name = "web"
+paths = ["/"]
+localPort = 21928
+
+[services.development]
+run = "pnpm --filter @workspace/shelf run dev"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/shelf", "run", "build"]
+
+[services.production.run]
+args = ["node", "artifacts/shelf/dist/server.mjs"]
+
+[services.env]
+PORT = "21928"
+BASE_PATH = "/"

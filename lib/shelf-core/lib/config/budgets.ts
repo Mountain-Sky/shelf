@@ -1,0 +1,15 @@
+export const budgets = Object.freeze({
+  queries: 4,
+  concurrency: 2,
+  pageSize: 20,
+  candidates: 60,
+  holdingsRecords: 30,
+  results: 12,
+  terms: 20,
+  catalogTimeoutMs: 3000,
+  modelTimeoutMs: 5000,
+  modelCalls: 2,
+  modelInputChars: 18000,
+  modelOutputTokens: 500,
+  holdingsFreshMs: 60000,
+});

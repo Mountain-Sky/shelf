@@ -1,0 +1,21 @@
+{
+  "name": "@workspace/shelf-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./lib/*.ts",
+    "./catalog-server": "./scripts/catalog-server.ts"
+  },
+  "scripts": {
+    "test": "tsx --test tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "catalog:set-stock": "tsx scripts/catalog-server.ts set-stock",
+    "catalog:reset": "tsx scripts/catalog-server.ts reset"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}
