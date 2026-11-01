@@ -23,6 +23,7 @@ import {
 import type { DiscoveryTrace, Preferences, ResultBook } from "../lib/types";
 import { branches } from "../lib/config/branches";
 import { BookCard, formatName } from "./components/BookCard";
+import { RotatingHeadline } from "./components/RotatingHeadline";
 import { Comparison } from "./components/Comparison";
 import {
   MAX_SAVED,
@@ -346,7 +347,7 @@ export default function Home() {
             <h1 id="hero-heading">
               Your next chapter.
               <br />
-              <em>Closer than you think.</em>
+              <RotatingHeadline />
             </h1>
             <p>
               Explore the catalog, find a book at your branch, and keep a
