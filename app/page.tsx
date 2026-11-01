@@ -389,7 +389,6 @@ export default function Home() {
               </button>
             </form>
             <p className="search-hint">
-              <Sparkles size={13} />{" "}
               {source === "koha"
                 ? "Search titles, authors, or ISBNs in Koha. Genre and similar-book discovery have limited coverage."
                 : "Your words are enough. Titles, authors, subjects, or just a mood."}
