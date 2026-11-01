@@ -86,6 +86,7 @@ export default function Home() {
   const [started, setStarted] = useState(false);
   const [source, setSource] = useState("pending");
   const [error, setError] = useState("");
+  const [resultMessage, setResultMessage] = useState("");
   const [contextLost, setContextLost] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
   const [lastRequest, setLastRequest] = useState("Explore the collection");
@@ -148,6 +149,7 @@ export default function Home() {
       setTrace(data.trace ?? null);
       if (!data.clarification) {
         setBooks(data.books);
+        setResultMessage(data.reply);
         setLastRequest(options.action === "branch" ? lastRequest : q);
       }
       if (!options.quiet)
@@ -788,9 +790,8 @@ export default function Home() {
                   </h3>
                   <p>
                     {started
-                      ? source === "demo"
-                        ? "No matching demo titles yet. Try a broader search."
-                        : "No matching catalog titles yet. Try a broader search."
+                      ? resultMessage ||
+                        "No matching titles yet. Try a specific title or author."
                       : "Browse by feeling, discover by conversation."}
                   </p>
                   <small>

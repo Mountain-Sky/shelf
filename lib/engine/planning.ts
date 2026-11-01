@@ -3,7 +3,7 @@ import { interpret } from "./intent";
 import { branches } from "../config/branches";
 import { budgets } from "./budgets";
 const stop = new Set(
-  "the and for from with that this book books want need find show something more less today please about good great looking like read reading have can you are let me some than into your what should recommend available at in of on an is to by my it only preferably actually rather under pages one second first third audiobook audiobooks ebook ebooks print format formats paperback hardcover all any length availability include unavailable reset clear filters collection explore browse".split(
+  "the and for from with that this book books want need find show something more less today tomorrow pickup pick up library please about good great looking like read reading have can you are let me some than into your what should recommend available at in of on an is to by my it only preferably actually rather under pages one second first third audiobook audiobooks ebook ebooks print format formats paperback hardcover all any length availability include unavailable reset clear filters collection explore browse".split(
     " ",
   ),
 );
@@ -90,7 +90,7 @@ export function planDiscovery(input: DiscoveryInput): Plan {
     )
       p.branch = branch.id;
   }
-  if (/\bavailable\b/i.test(message))
+  if (/\b(?:available|pick\s*up|on the shelf|in stock)\b/i.test(message))
     p.availability = /prefer|preferably/i.test(message) ? "prefer" : "only";
   if (/\b(any availability|include unavailable)\b/i.test(message))
     p.availability = "any";
@@ -102,7 +102,12 @@ export function planDiscovery(input: DiscoveryInput): Plan {
   const pages = /\bunder\s+(\d{1,5})\s+pages\b/i.exec(message);
   if (pages) p.maxPages = Number(pages[1]) - 1;
   if (/\b(any length|no page limit)\b/i.test(message)) delete p.maxPages;
-  if (/\bonly myster(?:y|ies)\b/i.test(message))
+  if (
+    !seedTitle &&
+    !refers &&
+    interpret(message) !== "known_item" &&
+    /\bmyster(?:y|ies)\b/i.test(message)
+  )
     p.requiredSubjects = [
       ...p.requiredSubjects.filter((s) => s !== "mystery"),
       "mystery",
@@ -188,6 +193,13 @@ export function planDiscovery(input: DiscoveryInput): Plan {
       "Which title should I compare the length with, or what is your maximum page count?";
   if (refinement && !refers && input.action !== "branch")
     terms = [...terms, ...termsFor(message)];
+  const branchWords = new Set(
+    branches.flatMap((b) => [
+      b.id.toLowerCase(),
+      ...b.name.toLowerCase().split(/\s+/),
+    ]),
+  );
+  terms = terms.filter((t) => !branchWords.has(t));
   terms = [...new Set([...terms, ...p.requiredSubjects])]
     .filter((t) => !p.excludedSubjects.includes(t))
     .slice(-budgets.terms);
@@ -259,11 +271,6 @@ export function queriesFor(plan: Plan): CatalogQuery[] {
     add("keyword", plan.expandedQueries.join(" "));
   for (const subject of plan.preferences.requiredSubjects)
     add("subject", subject);
-  if (
-    (plan.intent === "availability" &&
-      !plan.preferences.requiredSubjects.length) ||
-    !queries.length
-  )
-    add("browse", "");
+  if (!queries.length) add("browse", "");
   return queries.slice(0, budgets.queries);
 }

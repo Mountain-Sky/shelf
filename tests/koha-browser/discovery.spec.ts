@@ -84,10 +84,12 @@ test("missing external cover stays labeled and unknown holdings are never zero",
   await ready(page);
   await search(page, "Find E Street shuffle");
   // Koha contains distinct records with this title; do not assume a title is an identity.
-  const card = page.getByRole("article", {
-    name: "E Street shuffle :",
-    exact: true,
-  }).first();
+  const card = page
+    .getByRole("article", {
+      name: "E Street shuffle :",
+      exact: true,
+    })
+    .first();
   await expect(card).toContainText("Cover unavailable · placeholder");
   await expect(card.locator("img")).toHaveCount(0);
   // Exercise degraded availability through the presentation boundary, never by mutating Koha.
@@ -140,4 +142,21 @@ test("storage failure is visible and mobile cards fit the viewport", async ({
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test("mystery pickup request does not display unrelated Koha books", async ({
+  page,
+}) => {
+  await ready(page);
+  await search(page, "Find The Left Hand of Darkness");
+  await expect(page.getByRole("article")).not.toHaveCount(0);
+  await search(page, "I want a mystery to pick up tomorrow at Rust");
+  await expect(page.getByRole("article")).toHaveCount(0);
+  await expect(page.getByLabel("Look at")).toHaveValue("RUST");
+  await expect(page.locator(".empty")).toContainText(
+    "Genre metadata is unavailable",
+  );
+  await expect(page.locator(".empty")).toContainText(
+    "Future pickup availability is not confirmed",
+  );
 });

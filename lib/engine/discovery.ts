@@ -48,6 +48,18 @@ export async function discover(
   };
   const plan = planDiscovery(input);
   const notes: string[] = [];
+  const unsupportedSubjects =
+    !catalog.capabilities.fields.includes("subject") &&
+    (plan.preferences.requiredSubjects.length > 0 ||
+      plan.preferences.excludedSubjects.length > 0);
+  const unsupportedReply = unsupportedSubjects
+    ? `I cannot verify the requested genre filters (${[...plan.preferences.requiredSubjects, ...plan.preferences.excludedSubjects.map((s) => "exclude " + s)].join(", ")}) with this catalog adapter. Genre metadata is unavailable, so I have not substituted unrelated books. Try a specific title or author.`
+    : undefined;
+  if (unsupportedReply) notes.push(unsupportedReply);
+  if (/\b(?:tomorrow|next week|next month)\b/i.test(plan.query))
+    notes.push(
+      "Only current availability can be checked. Future pickup availability is not confirmed, and no copy has been reserved.",
+    );
   const calls: ModelCall[] = [];
   const traceQueries: DiscoveryTrace["queries"] = [];
   const collected: CatalogRecord[] = [];
@@ -198,9 +210,10 @@ export async function discover(
   );
   if (queries.length < plan.queries.length)
     notes.push("The provider does not support every planned search field.");
-  const requests = plan.clarification
-    ? []
-    : queries.slice(0, budgets.queries - seedAttempts);
+  const requests =
+    plan.clarification || unsupportedSubjects
+      ? []
+      : queries.slice(0, budgets.queries - seedAttempts);
   const pages = await parallelMap(
     requests,
     budgets.concurrency,
@@ -370,11 +383,12 @@ export async function discover(
             )?.record.extent?.pages,
           })),
         };
-  const reply = composeResponse(
-    books,
-    catalog.kind === "fixture",
-    plan.clarification,
-  );
+  let reply =
+    unsupportedReply ??
+    composeResponse(books, catalog.kind === "fixture", plan.clarification);
+  if (/\b(?:tomorrow|next week|next month)\b/i.test(plan.query))
+    reply +=
+      " Only current availability can be checked. Future pickup availability is not confirmed, and no copy has been reserved.";
   mark("response");
   stagesMs.total = Math.round((performance.now() - started) * 100) / 100;
   const trace: DiscoveryTrace = {

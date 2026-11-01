@@ -594,3 +594,56 @@ test("changing branches preserves known-title retrieval intent", async () => {
   assert.equal(plan.queries[0].field, "title");
   assert.equal(plan.queries[0].text, "The Hobbit");
 });
+
+test("mystery pickup at Rust keeps genre strict and never adds a browse-all fallback", async () => {
+  const result = await search("I want a mystery to pick up tomorrow at Rust");
+  assert.equal(result.state.preferences.branch, "RUST");
+  assert.equal(result.state.preferences.availability, "only");
+  assert.deepEqual(result.state.preferences.requiredSubjects, ["mystery"]);
+  assert.ok(result.trace.queries.every((q) => q.query.field !== "browse"));
+  assert.ok(result.books.length > 0);
+  assert.ok(result.books.every((b) => b.subjects.includes("mystery")));
+  assert.ok(
+    result.notices.some((n) =>
+      /Future pickup availability is not confirmed/.test(n),
+    ),
+  );
+});
+
+test("unsupported genres clear prior results with an honest explanation", async () => {
+  const previous = await search("Explore the collection");
+  let calls = 0;
+  const result = await search(
+    "a mystery to pick up tomorrow at rust",
+    previous.state,
+    {
+      ...mockProvider,
+      capabilities: { fields: ["keyword", "title", "browse"] },
+      async search() {
+        calls++;
+        return { records: catalogRecords };
+      },
+    },
+  );
+  assert.equal(calls, 0);
+  assert.deepEqual(result.books, []);
+  assert.deepEqual(result.state.snapshot, []);
+  assert.equal(result.clarification, undefined);
+  assert.match(result.reply, /cannot verify.*mystery/);
+  assert.equal(result.state.preferences.branch, "RUST");
+});
+
+test("availability intent does not make unrelated keyword results relevant", async () => {
+  const result = await search("zzzxxyy available at Rust", undefined, {
+    ...mockProvider,
+    async search() {
+      return { records: catalogRecords };
+    },
+  });
+  assert.deepEqual(result.books, []);
+  const browse = planDiscovery({ message: "available at Rust" });
+  assert.deepEqual(
+    browse.queries.map((q) => q.field),
+    ["browse"],
+  );
+});

@@ -69,10 +69,7 @@ export function rankRecords(records: CatalogRecord[], plan: Plan): Ranked[] {
         )
       )
         score += 200;
-      if (
-        plan.intent === "availability" ||
-        plan.queries.every((q) => q.field === "browse")
-      )
+      if (plan.queries.every((q) => q.field === "browse"))
         score = Math.max(1, score);
       const unique = [
         ...new Map(evidence.map((e) => [JSON.stringify(e), e])).values(),
