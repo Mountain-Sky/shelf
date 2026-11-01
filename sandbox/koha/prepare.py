@@ -85,6 +85,19 @@ a2dismod mpm_itk
 sed -i '/^[[:space:]]*AssignUserID /d' /etc/apache2/sites-available/${KOHA_INSTANCE}.conf''')
 script = script.replace('service rabbitmq-server start || true', '''printf '%s\\n' 'SERVER_ADDITIONAL_ERL_ARGS="+S 2:2 +SDcpu 1 +SDio 1 +A 2"' 'CTL_ERL_ARGS="+S 2:2 +SDcpu 1 +SDio 1 +A 2"' > /etc/rabbitmq/rabbitmq-env.conf
 service rabbitmq-server start || true''')
+restart_existing = '''
+# Resume an initialized container without rerunning koha-create or sample-data bootstrap.
+# The readiness marker survives container stops; its presence alone is not API readiness.
+if [ -f /ktd_ready ] && [ -f "/etc/koha/sites/${KOHA_INSTANCE}/koha-conf.xml" ]; then
+    service koha-common start
+    service apache2 start
+    service rabbitmq-server start || true
+    echo "Resumed existing Shelf Koha instance; database bootstrap skipped."
+    /bin/bash -c "trap : TERM INT; sleep infinity & wait"
+    exit 0
+fi
+'''
+script = script.replace('set -e\n', 'set -e\n' + restart_existing, 1)
 private_write('run-private.sh', script)
 private_write('sandbox.env', '\n'.join(key+'='+json.dumps(value) for key,value in env.items())+'\n')
 metadata = json.loads((Path(__file__).parent/'images.json').read_text())

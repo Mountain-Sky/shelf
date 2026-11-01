@@ -8,6 +8,7 @@ import {
   BookmarkCheck,
   ChevronRight,
   Copy,
+  Download,
   GitCompareArrows,
   LoaderCircle,
   MapPin,
@@ -23,6 +24,14 @@ import type { DiscoveryTrace, Preferences, ResultBook } from "../lib/types";
 import { branches } from "../lib/config/branches";
 import { BookCard, formatName } from "./components/BookCard";
 import { Comparison } from "./components/Comparison";
+import {
+  MAX_SAVED,
+  READING_LIST_KEY,
+  readSaved,
+  savedBook,
+  readingListText,
+  type SavedBook,
+} from "./ui/reading-list";
 import { Inspector } from "./components/Inspector";
 type Session = { id: string; revision: number };
 type Turn = { request: string; reply: string };
@@ -64,7 +73,9 @@ export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [branch, setBranch] = useState("");
   const [books, setBooks] = useState<ResultBook[]>([]);
-  const [saved, setSaved] = useState<ResultBook[]>([]);
+  const [saved, setSaved] = useState<SavedBook[]>([]);
+  const [savedReady, setSavedReady] = useState(false);
+  const [storageNotice, setStorageNotice] = useState("");
   const [compared, setCompared] = useState<ResultBook[]>([]);
   const [preferences, setPreferences] = useState<Preferences>(emptyPreferences);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -72,7 +83,7 @@ export default function Home() {
   const [actions, setActions] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [started, setStarted] = useState(false);
-  const [source, setSource] = useState("demo");
+  const [source, setSource] = useState("pending");
   const [error, setError] = useState("");
   const [contextLost, setContextLost] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
@@ -103,7 +114,7 @@ export default function Home() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(45000),
         body: JSON.stringify({
           message: q,
           branch: options.branch ?? branch,
@@ -180,10 +191,39 @@ export default function Home() {
       void ask("Explore the collection", { fresh: true, quiet: true });
     }
   }, []);
-  function toggleSaved(book: ResultBook) {
+  useEffect(() => {
+    try {
+      setSaved(readSaved(localStorage.getItem(READING_LIST_KEY)));
+    } catch {
+      setStorageNotice(
+        "Browser storage is unavailable. This list will last only for this visit.",
+      );
+    }
+    setSavedReady(true);
+  }, []);
+  useEffect(() => {
+    if (!savedReady) return;
+    try {
+      localStorage.setItem(READING_LIST_KEY, JSON.stringify(saved));
+    } catch {
+      setStorageNotice(
+        "Changes could not be saved in this browser. Download or copy your list before leaving.",
+      );
+    }
+  }, [saved, savedReady]);
+  function toggleSaved(book: SavedBook) {
     const exists = saved.some((b) => b.id === book.id);
+    if (!exists && saved.length >= MAX_SAVED) {
+      setCopyStatus(
+        `Your shelf holds up to ${MAX_SAVED} titles. Remove a title before adding another.`,
+      );
+      setShowShelf(true);
+      return;
+    }
     setSaved((previous) =>
-      exists ? previous.filter((b) => b.id !== book.id) : [...previous, book],
+      exists
+        ? previous.filter((b) => b.id !== book.id)
+        : [...previous, savedBook(book)],
     );
     setCopyStatus("");
     setShowShelf(true);
@@ -204,13 +244,24 @@ export default function Home() {
   }
   async function copyList() {
     try {
-      await navigator.clipboard.writeText(
-        saved.map((b) => `${b.title} — ${b.author}`).join("\n"),
-      );
+      await navigator.clipboard.writeText(readingListText(saved));
       setCopyStatus("Reading list copied.");
     } catch {
       setCopyStatus("Clipboard unavailable. Select and copy the titles above.");
     }
+  }
+  function downloadList() {
+    const url = URL.createObjectURL(
+      new Blob([readingListText(saved) + "\n"], {
+        type: "text/plain;charset=utf-8",
+      }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "shelf-reading-list.txt";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setCopyStatus("Reading list downloaded.");
   }
   function reset() {
     if (busy) return;
@@ -318,7 +369,11 @@ export default function Home() {
                 maxLength={500}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="A funny mystery. A hopeful story. Something like…"
+                placeholder={
+                  source === "koha"
+                    ? "Search a title, author, or ISBN…"
+                    : "A funny mystery. A hopeful story. Something like…"
+                }
                 autoComplete="off"
               />
               <button
@@ -334,8 +389,10 @@ export default function Home() {
               </button>
             </form>
             <p className="search-hint">
-              <Sparkles size={13} /> Your words are enough. Titles, authors,
-              subjects, or just a mood.
+              <Sparkles size={13} />{" "}
+              {source === "koha"
+                ? "Search titles, authors, or ISBNs in Koha. Genre and similar-book discovery have limited coverage."
+                : "Your words are enough. Titles, authors, subjects, or just a mood."}
             </p>
           </div>
           <div className="hero-art" aria-hidden="true">
@@ -371,7 +428,31 @@ export default function Home() {
         >
           <span className="section-kicker">A PLACE TO BEGIN</span>
           <div className="starter-grid">
-            {starters.map((s) => (
+            {(source === "koha"
+              ? [
+                  {
+                    label: "The Left Hand of Darkness",
+                    detail: "Try the seeded sandbox title",
+                    glyph: "✳",
+                  },
+                  {
+                    label: "Bleak House",
+                    detail: "Find a title in the catalog",
+                    glyph: "☼",
+                  },
+                  {
+                    label: "Books by Le Guin",
+                    detail: "Search by author",
+                    glyph: "↗",
+                  },
+                  {
+                    label: "Explore the collection",
+                    detail: "Browse Koha records",
+                    glyph: "✦",
+                  },
+                ]
+              : starters
+            ).map((s) => (
               <button
                 key={s.label}
                 onClick={() => void ask(s.label)}
@@ -409,6 +490,15 @@ export default function Home() {
               <RotateCcw size={15} /> Start fresh
             </button>
           </div>
+          <button
+            className="refresh-availability"
+            disabled={busy || !started}
+            onClick={() =>
+              void ask("Refresh availability", { action: "branch", branch })
+            }
+          >
+            <RotateCcw size={14} /> Refresh availability
+          </button>
           <div className="filter-toolbar">
             <div className="filter-group">
               <MapPin size={17} />
@@ -553,6 +643,10 @@ export default function Home() {
                   <X size={18} />
                 </button>
               </div>
+              <p className="reading-list-note">
+                {storageNotice ||
+                  "Saved in this browser on this device. No account or sync. Find a title again for current availability."}
+              </p>
               {saved.length ? (
                 <>
                   <ul className="saved-titles">
@@ -562,6 +656,15 @@ export default function Home() {
                           <strong>{b.title}</strong>
                           <small>{b.author}</small>
                         </span>
+                        <button
+                          className="saved-find"
+                          disabled={busy}
+                          onClick={() =>
+                            void ask(`Find ${b.title}`, { fresh: true })
+                          }
+                        >
+                          Find in catalog
+                        </button>
                         <button
                           aria-label={`Remove ${b.title} from reading list`}
                           onClick={() => toggleSaved(b)}
@@ -585,9 +688,11 @@ export default function Home() {
                         setCopyStatus("");
                       }}
                     >
-                      <Trash2 size={14} /> Clear temporary list
+                      <Trash2 size={14} /> Clear reading list
                     </button>
-                    <small>Only for this visit. No account needed.</small>
+                    <button className="secondary-button" onClick={downloadList}>
+                      <Download size={14} /> Download reading list
+                    </button>
                   </div>
                 </>
               ) : (
@@ -734,6 +839,9 @@ export default function Home() {
                       "An adventure for kids",
                     ]
                 )
+                  .filter(
+                    (q) => source !== "koha" || !/myster|more like/i.test(q),
+                  )
                   .slice(0, 3)
                   .map((q) => (
                     <button key={q} disabled={busy} onClick={() => void ask(q)}>
@@ -827,10 +935,20 @@ export default function Home() {
           <p>Less searching. More discovering.</p>
           <span>
             Discovery Lab ·{" "}
-            {source === "koha"
-              ? "Illustrative covers, Koha sandbox records"
-              : "Illustrative covers, sample records"}
+            {source === "koha" ? "Koha sandbox records" : "Sample records"}
           </span>
+          <small className="cover-policy">
+            Covers matched by catalog ISBN via{" "}
+            <a
+              href="https://openlibrary.org"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open Library
+            </a>
+            . Missing artwork uses a labeled placeholder. Cover requests share
+            the ISBN with Open Library.
+          </small>
         </footer>
       </main>
       {compared.length > 0 && (
@@ -858,10 +976,8 @@ export default function Home() {
         onClose={() => setShowCompare(false)}
         onRemove={(id) => setCompared((p) => p.filter((b) => b.id !== id))}
         onSave={(book) => {
-          if (!saved.some((b) => b.id === book.id))
-            setSaved((p) => [...p, book]);
-          setShowShelf(true);
-          setAnnouncement(`${book.title} saved to your shelf.`);
+          if (!saved.some((b) => b.id === book.id)) toggleSaved(book);
+          else setShowShelf(true);
         }}
       />
       <div className="sr-only" role="status" aria-live="polite">

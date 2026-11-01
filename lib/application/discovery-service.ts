@@ -68,6 +68,8 @@ function dependencies(ai: boolean) {
   if (!["mock", "http-demo", "carlx", "koha"].includes(mode))
     throw Error("Unsupported catalog configuration");
   return {
+    // Local Koha can exceed fixture timings during cold starts; keep the deadline bounded.
+    catalogTimeoutMs: mode === "koha" ? 6000 : undefined,
     catalog:
       mode === "koha"
         ? kohaFromEnvironment()

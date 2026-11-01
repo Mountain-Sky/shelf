@@ -38,7 +38,7 @@ test("complete bookshelf search, branch, inspector, reading list and empty-state
     "false",
   );
   await book.locator("summary").click();
-  await expect(book).toContainText("RUST: 0 demo copies");
+  await expect(book).toContainText(/Rust\s*0 demo copies/);
   await page.getByRole("button", { name: "Show Discovery Engine" }).click();
   await expect(
     page.getByRole("region", { name: "Discovery Engine inspector" }),
@@ -49,7 +49,7 @@ test("complete bookshelf search, branch, inspector, reading list and empty-state
   await expect(page.locator(".savedArea")).toContainText("Project Hail Mary");
   await page.getByRole("button", { name: "Copy reading list" }).click();
   await expect(page.locator('.savedArea [role="status"]')).not.toBeEmpty();
-  await page.getByRole("button", { name: "Clear temporary list" }).click();
+  await page.getByRole("button", { name: "Clear reading list" }).click();
   await expect(page.locator(".saved-titles li")).toHaveCount(0);
   await search(page, "Only mysteries");
   await expect(cards(page).first()).toBeVisible();
@@ -107,7 +107,7 @@ test("explicit similarity, format controls, comparison and keyboard dismissal", 
   await expect(dialog).not.toBeVisible();
 });
 
-test("mobile layout fits; temporary reading list disappears on reload", async ({
+test("mobile layout fits; reading list persists across reload", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -132,7 +132,9 @@ test("mobile layout fits; temporary reading list disappears on reload", async ({
   ).toBe(true);
   await page.reload();
   await expect(cards(page).first()).toBeVisible();
-  await expect(page.locator(".savedArea")).toHaveCount(0);
+  await expect(page.locator(".nav-count")).toHaveText("1");
+  await page.getByRole("button", { name: /My shelf/ }).click();
+  await expect(page.locator(".saved-titles li")).toHaveCount(1);
 });
 
 test("failed request preserves input and exact request retry succeeds", async ({
@@ -219,7 +221,7 @@ test("changing independent catalog stock updates the visible edition availabilit
     exact: true,
   });
   await book.locator("summary").click();
-  await expect(book).toContainText("RUST: 0 demo copies");
+  await expect(book).toContainText(/Rust\s*0 demo copies/);
   try {
     await stock(3);
     await search(page, "find Project Hail Mary");
@@ -227,7 +229,7 @@ test("changing independent catalog stock updates the visible edition availabilit
       !(await book.locator("details").evaluate((e) => e.hasAttribute("open")))
     )
       await book.locator("summary").click();
-    await expect(book).toContainText("RUST: 3 demo copies");
+    await expect(book).toContainText(/Rust\s*3 demo copies/);
   } finally {
     await stock(0);
   }

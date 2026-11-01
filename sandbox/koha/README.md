@@ -27,7 +27,7 @@ docker compose -p shelf-koha -f compose.json up -d
 docker compose -p shelf-koha -f compose.json exec koha test -f /ktd_ready
 ```
 
-A startup sentinel is preliminary only: actual authenticated API requests must pass before claiming readiness. Bootstrap logs may contain development credentials; do not paste raw logs into chat. Stop with `docker compose -p shelf-koha -f compose.json stop`. A dedicated named database volume retains data; `down -v` deliberately destroys that sandbox's data and should not be used routinely.
+A startup sentinel is preliminary only: actual authenticated API requests must pass before claiming readiness. Bootstrap logs may contain development credentials; do not paste raw logs into chat. Stop with `docker compose -p shelf-koha -f compose.json stop`. Restart retained containers with `docker compose -p shelf-koha -f compose.json start`. The generated startup script resumes services when the existing readiness marker and instance configuration are present, skipping installation and sample-data bootstrap. Verify actual API readiness again; the marker alone does not prove that services are running. A dedicated named database volume retains data; `down -v` deliberately destroys that sandbox's data and should not be used routinely.
 
 ## Seed and authenticate
 

@@ -13,6 +13,7 @@ export async function resolveAvailability(
   ranked: Ranked[],
   provider: CatalogProvider,
   plan: Plan,
+  catalogTimeoutMs: number = budgets.catalogTimeoutMs,
 ): Promise<{
   books: ResultBook[];
   holdings: Holding[];
@@ -35,7 +36,7 @@ export async function resolveAvailability(
   let received: Holding[] = [];
   if (selected.length) {
     try {
-      received = await bounded(budgets.catalogTimeoutMs, (s) =>
+      received = await bounded(catalogTimeoutMs, (s) =>
         provider.holdings(
           selected.map((r) => r.record.ref),
           branchIds,

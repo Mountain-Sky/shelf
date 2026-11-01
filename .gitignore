@@ -10,3 +10,7 @@ test-results/
 playwright-report/
 
 .local/
+
+.next-review/
+
+__pycache__/

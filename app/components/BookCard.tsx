@@ -9,6 +9,8 @@ import {
   Tablet,
   ChevronDown,
 } from "lucide-react";
+import { BookCover } from "./BookCover";
+import { coverIsbn } from "../ui/covers";
 import type { ResultBook } from "../../lib/types";
 import { branches } from "../../lib/config/branches";
 export const formatName = (format: string) =>
@@ -51,7 +53,6 @@ export function BookCard({
   onCompare: () => void;
   onSimilar: () => void;
 }) {
-  const palette = [...book.title].reduce((n, c) => n + c.charCodeAt(0), 0) % 7;
   const positive = book.availability.filter((h) => h.status === "available");
   const unknown = book.availability.some((h) => h.status === "unknown");
   const evidence = book.evidence.find((e) => e.field === "subjects");
@@ -60,16 +61,12 @@ export function BookCard({
   const koha = edition?.record.ref.provider === "koha";
   return (
     <article className="book" aria-label={book.title}>
-      <div className={`cover cover-${palette}`} aria-hidden="true">
-        <div className="cover-spine" />
-        <span className="cover-series">THE DISCOVERY COLLECTION</span>
-        <div className="cover-orbit" />
-        <div className="coverTitle">{book.title}</div>
-        <div className="coverAuthor">{book.author}</div>
-        <span className="cover-imprint">
-          {fixture ? "shelf editions · demo" : "shelf · placeholder cover"}
-        </span>
-      </div>
+      <BookCover
+        key={book.selectedRecordId + (coverIsbn(edition?.record) ?? "")}
+        title={book.title}
+        author={book.author}
+        isbn={coverIsbn(edition?.record)}
+      />
       <button
         className={`cover-save ${saved ? "is-saved" : ""}`}
         aria-label={
@@ -115,6 +112,33 @@ export function BookCard({
                 ? "No demo copies at selected branches"
                 : "No available copies reported at selected branches"}
         </div>
+        <ul className="branch-holdings" aria-label="Branch availability">
+          {book.availability.map((a) => (
+            <li key={a.branch} className={`holding-${a.status}`}>
+              <strong>{branchName(a.branch)}</strong>
+              <span>
+                {a.status === "unknown"
+                  ? "Availability unknown"
+                  : `${a.copies} ${fixture ? "demo copies" : "available"}`}
+              </span>
+              <small>
+                {a.observedAt && Number.isFinite(Date.parse(a.observedAt)) ? (
+                  <>
+                    Checked{" "}
+                    <time dateTime={a.observedAt}>
+                      {new Date(a.observedAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                  </>
+                ) : (
+                  "Check time unavailable"
+                )}
+              </small>
+            </li>
+          ))}
+        </ul>
         <details className="edition-details">
           <summary>
             {book.editions.length > 1
@@ -122,21 +146,6 @@ export function BookCard({
               : "Edition & availability"}
             <ChevronDown size={14} />
           </summary>
-          <div className="holdings">
-            {book.availability.map((a) => (
-              <span
-                key={a.branch}
-                className={
-                  a.status === "available" ? "available" : "unavailable"
-                }
-              >
-                {a.branch}:{" "}
-                {a.status === "unknown"
-                  ? "Availability unknown"
-                  : `${a.copies} ${fixture ? "demo copies" : "available copies reported"}`}
-              </span>
-            ))}
-          </div>
           {book.editions.map((e) => (
             <div className="edition-row" key={JSON.stringify(e.record.ref)}>
               <strong>{formatName(e.record.format)}</strong>
@@ -169,9 +178,17 @@ export function BookCard({
           <button
             className="similar-button"
             onClick={onSimilar}
-            disabled={busy}
+            disabled={busy || (koha && !book.subjects.length)}
+            title={
+              koha && !book.subjects.length
+                ? "This catalog record has no subject metadata for similarity."
+                : undefined
+            }
           >
-            More like this <ArrowUpRight size={15} />
+            {koha && !book.subjects.length
+              ? "Similarity unavailable"
+              : "More like this"}{" "}
+            <ArrowUpRight size={15} />
           </button>
           <button
             className={`compare-button ${compared ? "is-selected" : ""}`}

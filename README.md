@@ -1,8 +1,8 @@
 # Shelf Discovery Lab
 
-A working visual library discovery demo for the Loudoun County Public Library prototype. Explore a bookshelf, search or refine in natural language, compare editions, and keep a temporary reading list. The full demo reads 32 works / 44 edition records through an independent local catalog service with persistent synthetic holdings.
+A working visual library discovery demo for the Loudoun County Public Library prototype. Explore a bookshelf, search or refine in natural language, compare editions, and keep a browser-local reading list. The full demo reads 32 works / 44 edition records through an independent local catalog service with persistent synthetic holdings.
 
-**In the default catalog mode, all records are demo fixtures and all branch counts are synthetic. No live LCPL catalog, CARL•X connection, patron accounts or holds are implemented.** Book cover panels are typographic placeholders, not official cover art.
+**In the default catalog mode, all records are demo fixtures and all branch counts are synthetic. No live LCPL catalog, CARL•X connection, patron accounts or holds are implemented.** Book covers are requested from Open Library using a checksum-valid ISBN supplied by the selected catalog edition. Missing or failed artwork stays a labeled typographic placeholder; covers are enrichment, not evidence about holdings.
 
 ## Replit deployment
 
@@ -43,7 +43,7 @@ The committed npm lockfile makes installs reproducible. `npm audit` checks known
 - Search for “Project Hail Mary”, “gentle science fiction”, or “adventure for kids”. Unmatched queries produce an honest empty result.
 - Follow-up prompts update structured session preferences. “Only mysteries” and children requests apply explicit fixture subject filters. This is a small English heuristic system, not semantic search or age-suitability advice.
 - Changing the branch reruns the current query. Availability is resolved separately: unavailable books remain discoverable unless you request only available titles. Zero copies and unknown availability are distinct.
-- Save/remove titles and copy or clear your reading list. Lists and the visible conversation are in browser memory only and disappear on reload; the engine uses a separate short-lived structured session described below.
+- Save/remove titles and copy or clear your reading list. The reading list persists in this browser on this device, up to 100 titles. It stores only record identity, title and author—not holdings, search history or server sessions. Copy, download or clear it from My shelf; use Find in catalog to retrieve current observations. Browser storage failures are shown explicitly. The visible conversation disappears on reload; the engine uses a separate short-lived structured session described below.
 - With local diagnostics enabled, open Discovery Engine for the plan structure, retrieved candidates, grouping/ranking results, model status and stage timings. This optional view is for the local developer; it is not an authenticated administration system.
 
 ## Optional Koha sandbox
@@ -70,3 +70,13 @@ Set `SHELF_INSPECTOR=1` locally to enable diagnostic responses; restart the serv
 - [CARL•X integration requirements](docs/carlx.md)
 
 This is a local prototype. Public deployment, patron accounts and live holds are out of scope.
+
+## Local Koha interface checks
+
+With an existing Koha-backed Shelf running, run `SHELF_KOHA_TEST_URL=http://127.0.0.1:3000 npm run test:e2e:koha`. These browser tests read the existing sandbox; they never bootstrap, reset or seed its database. The expected seeded title and branch states are documented in `sandbox/koha/README.md`. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium installation.
+
+The Koha application wiring allows six seconds per catalog/holdings stage; other providers retain their default deadlines. Errors still fail closed and unknown holdings are never displayed as zero. Cards expose branch counts and observation times, with a refresh action preserving the current search and filters.
+
+Cover images load directly from Open Library, lazily, with no referrer. This shares the catalog ISBN and browser network information with that service. No title-based guesses, credentials or patron data are sent. Its [Covers API](https://openlibrary.org/dev/docs/api/covers) can return missing-image and rate-limit errors; both retain the labeled fallback. Artwork is not guaranteed to match local jacket variants.
+
+For isolated local review builds, set `SHELF_REVIEW_BUILD=1` during both build and startup to use `.next-review` without overwriting `.next` used by a running server. Never rebuild a directory while its server is serving it.

@@ -22,12 +22,22 @@ import { budgets, bounded, parallelMap } from "./budgets";
 export type EngineDependencies = {
   catalog: CatalogProvider;
   intelligence?: Intelligence;
+  /** Application-selected stage deadline; engine remains provider independent. */
+  catalogTimeoutMs?: number;
 };
 export async function discover(
   input: DiscoveryInput,
   dependencies: EngineDependencies,
 ): Promise<DiscoveryResult> {
   const { catalog, intelligence } = dependencies;
+  const catalogTimeoutMs =
+    dependencies.catalogTimeoutMs ?? budgets.catalogTimeoutMs;
+  if (
+    !Number.isFinite(catalogTimeoutMs) ||
+    catalogTimeoutMs < 1 ||
+    catalogTimeoutMs > 6000
+  )
+    throw Error("Invalid catalog deadline");
   const started = performance.now();
   let last = started;
   const stagesMs: Record<string, number> = {};
@@ -132,9 +142,7 @@ export async function discover(
       seedAttempts++;
       let page: CatalogPage;
       try {
-        page = await bounded(budgets.catalogTimeoutMs, (s) =>
-          catalog.search(query, s),
-        );
+        page = await bounded(catalogTimeoutMs, (s) => catalog.search(query, s));
         if (!Array.isArray(page.records)) throw Error("Invalid seed response");
         traceQueries.push({
           query,
@@ -198,7 +206,7 @@ export async function discover(
     budgets.concurrency,
     async (query) => {
       try {
-        const page = await bounded(budgets.catalogTimeoutMs, (s) =>
+        const page = await bounded(catalogTimeoutMs, (s) =>
           catalog.search(query, s),
         );
         if (!page || !Array.isArray(page.records))
@@ -233,9 +241,7 @@ export async function discover(
       const query: CatalogQuery = { ...initial.query, cursor };
       let page: CatalogPage | undefined;
       try {
-        page = await bounded(budgets.catalogTimeoutMs, (s) =>
-          catalog.search(query, s),
-        );
+        page = await bounded(catalogTimeoutMs, (s) => catalog.search(query, s));
         if (!Array.isArray(page?.records)) page = undefined;
       } catch {
         page = undefined;
@@ -337,7 +343,12 @@ export async function discover(
     }
   } else calls.push({ stage: "assessment", status: "disabled", durationMs: 0 });
   mark("assessment");
-  const availability = await resolveAvailability(ranked, catalog, plan);
+  const availability = await resolveAvailability(
+    ranked,
+    catalog,
+    plan,
+    catalogTimeoutMs,
+  );
   notes.push(...availability.notes);
   mark("availabilityAndGrouping");
   const books = availability.books;
