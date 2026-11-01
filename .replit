@@ -8,8 +8,12 @@ build = ["sh", "-c", "npm ci --include=dev && npm run build"]
 run = ["sh", "-c", "npm run replit:start -- --port 5000"]
 
 [[ports]]
-localPort = 5000
+localPort = 3000
 externalPort = 80
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
 
 [workflows]
 runButton = "Project"
