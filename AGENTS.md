@@ -1,3 +1,7 @@
+# Shelf design requirements
+
+Before any UI or styling change, read [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). All routes and new experiments must use the shared Loudoun-inspired Shelf identity and existing tokens. An alternate layout or a request to modernize controls is not permission to change the palette or type family. Preserve both `/` and `/explore` unless the user explicitly requests otherwise.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

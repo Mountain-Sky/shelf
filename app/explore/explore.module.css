@@ -1,11 +1,6 @@
 .explore {
-  --ink: #24252b;
-  --teal: #5b4bc4;
-  --rust: #5b4bc4;
-  background: #fafafb;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --serif: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--paper);
+  font-family: var(--sans);
   color: var(--ink);
   min-height: 100vh;
   padding: 0 5vw 40px;
@@ -18,7 +13,7 @@
   align-items: center;
   gap: 32px;
   padding: 16px 0;
-  border-bottom: 1px solid #e5e5eb;
+  border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
 .header a {
@@ -36,7 +31,7 @@
 }
 .brand span,
 .brand svg {
-  color: var(--rust);
+  color: var(--accent);
 }
 .header nav {
   display: flex;
@@ -44,14 +39,14 @@
   gap: 25px;
   flex: 1;
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 700;
 }
 .header nav span {
-  color: var(--teal);
+  color: var(--green);
 }
 .header small {
   font-size: 10px;
-  background: #eeecfa;
+  background: var(--surface-selected);
   padding: 5px 8px;
   border-radius: 20px;
   margin-left: 5px;
@@ -65,13 +60,13 @@
 }
 .kicker {
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: 2px;
 }
 .intro h1 {
   font-family: inherit;
   font-size: clamp(34px, 4vw, 48px);
-  font-weight: 650;
+  font-weight: 700;
   letter-spacing: -2px;
   line-height: 1.12;
   margin: 10px 0 0;
@@ -79,24 +74,24 @@
 .intro p {
   font-size: 14px;
   line-height: 1.7;
-  color: #71717e;
+  color: var(--muted);
   margin: 0;
 }
 .composer {
-  background: #fff;
-  border: 1px solid #e2e0eb;
+  background: var(--paper);
+  border: 1px solid var(--line);
   border-radius: 24px;
   padding: 20px 22px 14px;
-  box-shadow: 0 5px 24px #23203b06;
+  box-shadow: 0 5px 24px color-mix(in srgb, var(--ink) 3%, transparent);
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
 }
 .composer:focus-within {
-  border-color: #9e92dc;
+  border-color: var(--green);
   box-shadow:
-    0 0 0 3px #7260ca0c,
-    0 8px 28px #23203b08;
+    0 0 0 3px color-mix(in srgb, var(--green) 12%, transparent),
+    0 8px 28px color-mix(in srgb, var(--ink) 4%, transparent);
 }
 .composer textarea {
   display: block;
@@ -115,7 +110,7 @@
   color: var(--ink);
 }
 .composer textarea::placeholder {
-  color: #7c7b88;
+  color: var(--muted);
   opacity: 1;
 }
 .composerFooter {
@@ -127,27 +122,27 @@
 }
 .composerFooter > span {
   font-size: 12px;
-  color: #71717e;
+  color: var(--muted);
 }
 .composer button {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: #292733;
-  color: #fff;
+  background: var(--accent);
+  color: var(--paper);
   padding: 11px 18px;
   border-radius: 24px;
   font-size: 13px;
   font-weight: 600;
 }
 .composer button:disabled {
-  background: #eeedf2;
-  color: #777581;
+  background: var(--surface);
+  color: var(--muted);
   opacity: 1;
   cursor: default;
 }
 .composer button:not(:disabled):hover {
-  background: #5141a9;
+  background: var(--accent-hover);
 }
 .controls {
   display: flex;
@@ -155,7 +150,7 @@
   gap: 20px;
   flex-wrap: wrap;
   padding: 12px 0 18px;
-  border-bottom: 1px solid #e5e5eb;
+  border-bottom: 1px solid var(--line);
   font-size: 12px;
 }
 .paths {
@@ -164,11 +159,11 @@
   margin-right: auto;
 }
 .paths button {
-  border: 1px solid #e1e0e9;
+  border: 1px solid var(--line);
   border-radius: 30px;
   padding: 7px 13px;
   background: transparent;
-  color: var(--teal);
+  color: var(--green);
 }
 .controls label {
   display: flex;
@@ -177,7 +172,7 @@
 }
 .controls select {
   background: white;
-  border: 1px solid #e1e0e9;
+  border: 1px solid var(--line);
   border-radius: 4px;
   padding: 8px;
   max-width: 210px;
@@ -185,7 +180,7 @@
 }
 .controls > button {
   background: transparent;
-  color: var(--teal);
+  color: var(--green);
   text-decoration: underline;
   border: 0;
 }
@@ -200,13 +195,13 @@
 }
 .heading h2 {
   font-size: 23px;
-  font-weight: 550;
+  font-weight: 700;
   margin: 7px 0 0;
   overflow-wrap: anywhere;
 }
 .heading p {
   font-size: 12px;
-  color: #71717e;
+  color: var(--muted);
   flex-shrink: 0;
 }
 .criteria {
@@ -217,7 +212,7 @@
 }
 .criteria span {
   font-size: 11px;
-  background: #eeecfa;
+  background: var(--surface-selected);
   padding: 5px 10px;
   border-radius: 4px;
 }
@@ -225,7 +220,7 @@
   font-size: 13px;
   line-height: 1.6;
   max-width: 900px;
-  color: #71717e;
+  color: var(--muted);
 }
 .shelf {
   margin: 18px 0 30px;
@@ -241,7 +236,7 @@
 .shelf h3 span {
   font-size: 11px;
   font-weight: 400;
-  color: #71717e;
+  color: var(--muted);
 }
 .books {
   display: grid;
@@ -253,14 +248,14 @@
   animation: arrive 0.3s ease-out;
 }
 .art {
-  border-bottom: 5px solid #d1c5b0;
+  border-bottom: 5px solid var(--line);
   padding-bottom: 9px;
 }
 .art :global(.cover) {
   width: 100%;
   height: auto;
   aspect-ratio: 2/3;
-  box-shadow: 4px 8px 12px #29373318;
+  box-shadow: 4px 8px 12px color-mix(in srgb, var(--ink) 10%, transparent);
   border-radius: 2px 5px 5px 2px;
 }
 .art :global(.cover-caption) {
@@ -298,12 +293,12 @@
   margin-top: 2px;
 }
 .title:hover {
-  color: var(--rust);
+  color: var(--accent);
 }
 .volume > p {
   font-size: 11px;
   line-height: 1.5;
-  color: #71717e;
+  color: var(--muted);
   margin: 0 0 8px;
 }
 .available,
@@ -312,18 +307,18 @@
   display: block;
 }
 .available {
-  color: #396a51;
+  color: var(--green);
 }
 .unknown {
-  color: #77736b;
+  color: var(--muted);
 }
 .anchor {
-  background: #eeecfa;
+  background: var(--surface-selected);
   padding: 18px;
   display: flex;
   gap: 18px;
   margin: 20px 0;
-  border-left: 3px solid var(--teal);
+  border-left: 3px solid var(--green);
 }
 .anchor div {
   display: grid;
@@ -338,7 +333,7 @@
 }
 .detail {
   background: white;
-  border: 1px solid #c3d1ce;
+  border: 1px solid var(--line);
   padding: 24px;
   margin: 25px 0;
   border-radius: 8px;
@@ -359,7 +354,7 @@
 }
 .detail > a {
   font-size: 13px;
-  color: var(--teal);
+  color: var(--green);
 }
 .subjects {
   display: flex;
@@ -367,44 +362,44 @@
   flex-wrap: wrap;
   gap: 10px;
   padding: 25px 0;
-  border-top: 1px solid #e5e5eb;
+  border-top: 1px solid var(--line);
 }
 .subjects > span {
   width: 100%;
   font-size: 11px;
-  color: #71717e;
+  color: var(--muted);
 }
 .subjects button {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 9px 12px;
-  background: #eeecfa;
-  color: var(--teal);
+  background: var(--surface-selected);
+  color: var(--green);
   border-radius: 4px;
   font-size: 12px;
   max-width: 100%;
   text-align: left;
 }
 .footer {
-  border-top: 1px solid #e5e5eb;
+  border-top: 1px solid var(--line);
   padding-top: 20px;
   font-size: 11px;
   line-height: 1.6;
-  color: #71717e;
+  color: var(--muted);
 }
 .footer a {
-  color: var(--teal);
+  color: var(--green);
 }
 .error,
 .storage {
   padding: 16px;
-  border: 1px solid #b5c7be;
+  border: 1px solid var(--line);
   background: white;
   font-size: 14px;
 }
 .error {
-  border-color: #c17656;
+  border-color: var(--accent);
 }
 .empty {
   padding: 40px 10px;
@@ -508,7 +503,7 @@
   padding: 13px 20px;
   border: 0;
   border-radius: 30px;
-  background: var(--teal);
+  background: var(--green);
   color: white;
-  box-shadow: 0 4px 20px #253c4320;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--ink) 12%, transparent);
 }
