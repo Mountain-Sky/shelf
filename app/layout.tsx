@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./interface.css";
 export const metadata = {
   title: "Shelf | Library discovery",
   description: "Local-first AI-native catalog prototype",

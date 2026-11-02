@@ -61,8 +61,16 @@ export function Comparison({
         Compare the selected editions using their supplied catalog details.
         Missing facts stay unknown.
       </p>
+      <p className="comparison-scroll-hint">
+        Swipe the table sideways to compare all selected titles.
+      </p>
       {books.length ? (
-        <div className="comparison-scroll">
+        <div
+          className="comparison-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Scrollable book comparison"
+        >
           <table>
             <caption className="sr-only">
               Selected book edition comparison

@@ -1,0 +1,587 @@
+/* Shared interface finish. Keep decorative book artwork in globals.css;
+   every functional surface uses the same type, color and control tokens here. */
+:root {
+  --sans: Arial, Helvetica, sans-serif;
+  --ink: #263b44;
+  --muted: #52656e;
+  --green: #326d80;
+  --accent: #ad491b;
+  --line: #cbdbe1;
+  --surface: #f2f6f7;
+  --surface-selected: #e6f0f3;
+  --radius: 4px;
+}
+body {
+  font-size: 14px;
+  line-height: 1.6;
+}
+button,
+input,
+select {
+  line-height: 1.4;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+h2,
+h3,
+.dialog-heading h2,
+.comparison-dialog thead th,
+.empty h3,
+.inspector h3,
+.conversation .user {
+  font-family: var(--sans);
+  font-style: normal;
+  font-weight: 700;
+  color: var(--ink);
+}
+.dialog-heading h2 {
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+.bookContent h3 {
+  font-size: 21px;
+}
+.bookContent .by,
+.bookFormat,
+.match-reason,
+.availability-summary,
+.edition-details summary,
+.edition-row,
+.edition-row small,
+.provenance-note,
+.cover-caption,
+.branch-holdings small,
+.search-hint,
+.collection-footnote,
+.result-count,
+.saved-tools > small,
+.saved-titles small,
+.guide-note p,
+.labBar,
+.labBar button,
+.trace-note,
+.trace-grid summary {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.book-summary,
+.guide-intro,
+.conversation .assistant,
+.dialog-description,
+.empty p,
+.empty small,
+.empty-panel,
+.error-banner p,
+.search-notices,
+.reading-list-note {
+  font-size: 14px;
+  line-height: 1.65;
+}
+.book-summary,
+.bookContent .by,
+.bookFormat,
+.match-reason,
+.cover-caption,
+.provenance-note,
+.edition-details summary,
+.edition-row,
+.edition-row strong,
+.branch-holdings small,
+.collection-footnote,
+.saved-titles small,
+.saved-tools > small,
+.empty-panel,
+.dialog-description,
+.trace-note,
+.request-label,
+.journey,
+.labBar,
+.labBar button,
+.loading-bar {
+  color: var(--muted);
+}
+.edition-details,
+.edition-row,
+.labBar {
+  border-color: var(--line);
+}
+.secondary-button,
+.quiet-button,
+.similar-button,
+.compare-button,
+.text-save,
+.reset-button,
+.refresh-availability,
+.saved-find,
+.icon-button,
+.library-account button,
+.comparison-dialog thead th button {
+  min-height: 44px;
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+.secondary-button {
+  padding: 10px 16px;
+  font-weight: 700;
+}
+.quiet-button,
+.icon-button {
+  color: var(--green);
+}
+.quiet-button:hover,
+.icon-button:hover {
+  background: var(--surface-selected);
+}
+.icon-button,
+.comparison-dialog thead th button,
+.compare-button {
+  min-width: 44px;
+  flex-shrink: 0;
+}
+.text-save {
+  padding: 8px 0;
+}
+.reset-button,
+.refresh-availability {
+  padding: 8px 0;
+}
+.catalog-link {
+  min-height: 44px;
+  font-size: 13px;
+}
+.filter-toolbar {
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+.filter-group {
+  flex-wrap: wrap;
+}
+.filter-group label {
+  font-size: 12px;
+}
+.filter-group select {
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.active-criteria > span,
+.active-criteria > button {
+  font-size: 12px;
+}
+.branch-holdings strong,
+.account-actions strong {
+  overflow-wrap: anywhere;
+}
+.branch-holdings li {
+  font-size: 13px;
+  gap: 4px 8px;
+}
+.holdings span {
+  font-size: 12px;
+  background: #f8f1e7;
+  color: #795022;
+}
+.holdings .available {
+  background: var(--surface-selected);
+  color: #285b6c;
+}
+.no-copies,
+.is-unknown {
+  color: #795022;
+}
+.book-actions {
+  flex-wrap: wrap;
+}
+.similar-button {
+  padding: 10px;
+}
+.empty,
+.search-notices,
+.inspector {
+  background: white;
+  border-color: var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+}
+.empty-symbol {
+  background: var(--surface-selected);
+  color: var(--green);
+}
+.empty h3 {
+  font-size: 26px;
+}
+.search-notices summary {
+  min-height: 28px;
+}
+.error-banner {
+  border-radius: var(--radius);
+  color: #79431d;
+}
+.error-banner strong {
+  font-size: 14px;
+}
+.copy-status {
+  color: #285b6c;
+  font-size: 13px;
+}
+.saved-titles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.saved-titles li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  padding: 16px;
+  gap: 8px 12px;
+  border-color: var(--line);
+  border-radius: var(--radius);
+}
+.saved-titles li > span {
+  grid-column: 1;
+  overflow-wrap: anywhere;
+}
+.saved-titles strong {
+  font-size: 15px;
+  color: var(--ink);
+}
+.saved-titles li button {
+  color: var(--green);
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: var(--radius);
+}
+.saved-titles li .saved-find {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: start;
+  padding: 8px 12px;
+  background: var(--surface-selected);
+  font-weight: 700;
+  font-size: 13px;
+}
+.saved-titles li button:last-child {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+}
+.saved-titles li button:hover {
+  background: var(--surface-selected);
+}
+.compare-dock {
+  background: var(--ink);
+  color: white;
+  border-radius: var(--radius);
+  gap: 12px;
+}
+.compare-dock > button:not(.dock-clear) {
+  background: white;
+  color: var(--green);
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.compare-dock > span {
+  font-size: 13px;
+}
+.dock-clear {
+  color: white;
+  min-width: 44px;
+  min-height: 44px;
+}
+.comparison-dialog,
+.library-account {
+  padding: 28px;
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+  border-radius: var(--radius);
+  max-height: calc(100dvh - 32px);
+  box-shadow: 0 20px 80px #142a3633;
+  overscroll-behavior: contain;
+}
+.comparison-dialog::backdrop,
+.library-account::backdrop {
+  background: #142a36aa;
+  backdrop-filter: blur(3px);
+}
+.comparison-dialog th,
+.comparison-dialog td {
+  border-color: var(--line);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.comparison-dialog thead th {
+  background: var(--surface-selected);
+  color: var(--ink);
+  font-size: 18px;
+}
+.comparison-dialog th:first-child,
+.comparison-dialog th[scope="row"] {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.comparison-dialog td,
+.comparison-dialog thead th button {
+  color: var(--muted);
+}
+.comparison-scroll {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.comparison-dialog table {
+  min-width: 600px;
+}
+.library-account h3 {
+  font-size: 18px;
+  margin: 24px 0 12px;
+}
+.library-account > p {
+  color: var(--muted);
+}
+.library-account label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.library-account input,
+.library-account select {
+  min-height: 46px;
+  font-size: 16px;
+  font-weight: 400;
+  background: white;
+  color: var(--ink);
+  border-color: #829ba5;
+  border-radius: var(--radius);
+}
+.library-account button {
+  background: var(--surface-selected);
+  border: 1px solid var(--line);
+  color: #285b6c;
+  font-weight: 700;
+}
+.library-account button:hover:not(:disabled) {
+  background: #d8e8ee;
+  border-color: #829ba5;
+}
+.library-account button.secondary-button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.library-account button.secondary-button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.library-account .dialog-heading button {
+  background: transparent;
+  border: 0;
+  width: 44px;
+  padding: 8px;
+}
+.account-actions {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.account-actions strong {
+  flex-basis: 100%;
+  font-size: 14px;
+}
+.library-account li {
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.library-account li > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.library-account li > strong {
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.library-account li button {
+  justify-self: start;
+}
+.account-notice {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.hold-request {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.hold-request h3 {
+  margin-top: 0;
+}
+.inspector h3 {
+  font-size: 24px;
+}
+.trace-stats div {
+  background: var(--surface-selected);
+  border-radius: var(--radius);
+}
+.trace-stats span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.trace-stats strong {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+}
+.trace-grid details {
+  border-color: var(--line);
+}
+.trace-grid pre {
+  font-size: 12px;
+  color: var(--ink);
+}
+.skeleton-book {
+  background: white;
+  border-color: var(--line);
+  border-radius: var(--radius);
+}
+@media (max-width: 760px) {
+  .saved-titles {
+    grid-template-columns: 1fr;
+  }
+  .site-header nav {
+    gap: 18px;
+  }
+  .site-header nav a,
+  .site-header nav button {
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .filter-group {
+    flex: 1 1 180px;
+  }
+  .filter-group select {
+    max-width: 100%;
+  }
+  .dialog-heading h2 {
+    font-size: 24px;
+  }
+  .comparison-dialog,
+  .library-account {
+    padding: 20px;
+  }
+}
+@media (max-width: 540px) {
+  .site-header nav {
+    flex-basis: 100%;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .site-header nav .nav-active {
+    display: flex;
+  }
+  .demo-badge {
+    display: none;
+  }
+  .brand {
+    font-size: 30px;
+  }
+  .starter-grid strong {
+    font-size: 14px;
+  }
+  .starter-grid small {
+    font-size: 12px;
+  }
+  .starter-grid > button {
+    min-height: 112px;
+  }
+  .filter-toolbar {
+    gap: 8px;
+    align-items: stretch;
+  }
+  .filter-group {
+    flex-basis: 100%;
+    display: grid;
+    grid-template-columns: 20px 80px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .filter-group select {
+    width: 100%;
+  }
+  .result-count {
+    margin: 8px 0 0;
+  }
+  .filter-divider {
+    display: none;
+  }
+  .bookContent h3 {
+    font-size: 22px;
+  }
+  .savedArea {
+    padding: 18px;
+  }
+  .saved-tools button {
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .compare-dock {
+    width: calc(100% - 24px);
+    justify-content: space-between;
+    gap: 6px;
+    padding: 8px;
+    bottom: 12px;
+  }
+  .compare-dock > span {
+    font-size: 12px;
+  }
+  .compare-dock > span > svg {
+    display: none;
+  }
+  .compare-dock > button:not(.dock-clear) {
+    font-size: 12px;
+    padding: 8px;
+  }
+  .comparison-dialog,
+  .library-account {
+    width: calc(100% - 24px);
+    max-width: calc(100% - 24px);
+    padding: 18px;
+  }
+  .dialog-heading h2 {
+    font-size: 22px;
+  }
+  .comparison-dialog th:first-child {
+    width: 100px;
+  }
+  .library-account li button {
+    width: 100%;
+  }
+  .trace-stats {
+    grid-template-columns: 1fr;
+  }
+  .labBar > span {
+    flex-wrap: wrap;
+  }
+}
+.comparison-scroll-hint {
+  display: none;
+}
+@media (max-width: 540px) {
+  .filter-group:has(label.sr-only) select {
+    grid-column: 2 / -1;
+  }
+  .comparison-scroll-hint {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 8px;
+  }
+}
+.comparison-scroll:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+@media (min-width: 761px) and (max-width: 900px) {
+  .hero-art {
+    transform: scale(0.7);
+  }
+}

@@ -199,10 +199,11 @@ export function LibraryAccount({
                 <strong>{l.title}</strong>
                 <span>
                   Due {new Date(l.due).toLocaleDateString()} · {l.renewals}{" "}
-                  renewals
+                  {l.renewals === 1 ? "renewal" : "renewals"}
                 </span>
                 <button
                   disabled={busy}
+                  aria-label={`Renew ${l.title}`}
                   onClick={() =>
                     void act(
                       { action: "renew", loanId: l.id },
@@ -210,7 +211,7 @@ export function LibraryAccount({
                     )
                   }
                 >
-                  Renew {l.title}
+                  Renew loan
                 </button>
               </li>
             ))}
@@ -228,6 +229,7 @@ export function LibraryAccount({
                 </span>
                 <button
                   disabled={busy}
+                  aria-label={`Cancel hold for ${h.title}`}
                   onClick={() =>
                     void act(
                       { action: "cancel", holdId: h.id },
@@ -235,7 +237,7 @@ export function LibraryAccount({
                     )
                   }
                 >
-                  Cancel hold for {h.title}
+                  Cancel hold
                 </button>
               </li>
             ))}
