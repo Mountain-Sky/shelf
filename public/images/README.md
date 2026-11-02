@@ -1,0 +1,1 @@
+reading-room.webp is an AI-generated decorative editorial image created for Shelf on 2026-11-01. It does not depict a specific library, real catalog title, or branch. Generated with the built-in image tool; encoded locally as WebP. No remote image service is required to display it.

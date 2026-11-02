@@ -414,32 +414,18 @@ export default function Home() {
                 : "Your words are enough. Titles, authors, subjects, or just a mood."}
             </p>
           </div>
-          <div className="hero-art" aria-hidden="true">
-            <div className="art-sun" />
-            <span className="art-spark spark-one">✦</span>
-            <span className="art-spark spark-two">✳</span>
-            <div className="art-book book-back">
-              <span>
-                WONDER
-                <br />
-                AWAITS
-              </span>
-              <small>take the scenic route</small>
+          <figure className="hero-editorial">
+            <div className="hero-editorial-image">
+              <img
+                src="/images/reading-room.webp"
+                width="900"
+                height="1125"
+                alt=""
+                fetchPriority="high"
+              />
             </div>
-            <div className="art-book book-front">
-              <span>
-                one
-                <br />
-                more
-                <br />
-                <em>chapter.</em>
-              </span>
-              <BookOpen size={24} />
-            </div>
-            <div className="art-caption">
-              A good place to get a little lost.
-            </div>
-          </div>
+            <figcaption>Find something worth slowing down for.</figcaption>
+          </figure>
         </section>
         <section
           className="starting-points"
