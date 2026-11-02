@@ -9,6 +9,7 @@ import {
   Tablet,
   ChevronDown,
 } from "lucide-react";
+import { useState } from "react";
 import { BookCover } from "./BookCover";
 import { coverIsbn } from "../ui/covers";
 import type { ResultBook, CatalogBranch } from "../../lib/types";
@@ -57,8 +58,23 @@ export function BookCard({
   onSimilar: () => void;
   onHold?: () => void;
 }) {
+  const [locationsExpanded, setLocationsExpanded] = useState(false);
   const positive = book.availability.filter((h) => h.status === "available");
   const unknown = book.availability.some((h) => h.status === "unknown");
+  const sortedLocations = [...book.availability].sort(
+    (a, b) =>
+      (({ available: 0, unknown: 1, unavailable: 2 })[a.status] ?? 2) -
+      ({ available: 0, unknown: 1, unavailable: 2 }[b.status] ?? 2),
+  );
+  const previewLocations =
+    book.availability.length === 1
+      ? book.availability
+      : positive.length
+        ? positive.slice(0, 2)
+        : sortedLocations.filter((a) => a.status === "unknown").slice(0, 1);
+  const visibleLocations = locationsExpanded
+    ? sortedLocations
+    : previewLocations;
   const evidence = book.evidence.find((e) => e.field === "subjects");
   const edition = selectedEdition(book);
   const fixture = edition?.record.provenance.kind === "fixture";
@@ -116,8 +132,12 @@ export function BookCard({
                 ? "No demo copies at selected branches"
                 : "No available copies reported at selected branches"}
         </div>
-        <ul className="branch-holdings" aria-label="Branch availability">
-          {book.availability.map((a) => (
+        <ul
+          className={`branch-holdings ${locationsExpanded ? "is-expanded" : ""}`}
+          tabIndex={locationsExpanded ? 0 : undefined}
+          aria-label="Branch availability"
+        >
+          {visibleLocations.map((a) => (
             <li key={a.branch} className={`holding-${a.status}`}>
               <strong>{branchName(a.branch, catalogBranches)}</strong>
               <span>
@@ -143,6 +163,23 @@ export function BookCard({
             </li>
           ))}
         </ul>
+        {positive.length > 0 && unknown && (
+          <p className="location-uncertainty">
+            Some other locations have unconfirmed availability.
+          </p>
+        )}
+        {book.availability.length > previewLocations.length && (
+          <button
+            className="locations-toggle"
+            aria-expanded={locationsExpanded}
+            onClick={() => setLocationsExpanded(!locationsExpanded)}
+          >
+            {locationsExpanded
+              ? "Show fewer locations"
+              : `View all ${book.availability.length} locations`}
+            <ChevronDown size={14} />
+          </button>
+        )}
         <details className="edition-details">
           <summary>
             {book.editions.length > 1

@@ -137,14 +137,24 @@ export function Comparison({
                 </th>
                 {books.map((b) => (
                   <td key={b.id}>
-                    {b.availability.map((a) => (
-                      <p key={a.branch}>
-                        {branchName(a.branch, catalogBranches)}:{" "}
-                        {a.status === "unknown"
-                          ? "unknown"
-                          : `${a.copies} ${selectedEdition(b)?.record.provenance.kind === "fixture" ? "demo copies" : "available copies reported"}`}
-                      </p>
-                    ))}
+                    <details className="comparison-locations">
+                      <summary>
+                        {b.availability.length} locations ·{" "}
+                        {
+                          b.availability.filter((a) => a.status === "available")
+                            .length
+                        }{" "}
+                        with copies
+                      </summary>
+                      {b.availability.map((a) => (
+                        <p key={a.branch}>
+                          {branchName(a.branch, catalogBranches)}:{" "}
+                          {a.status === "unknown"
+                            ? "unknown"
+                            : `${a.copies} ${selectedEdition(b)?.record.provenance.kind === "fixture" ? "demo copies" : "available copies reported"}`}
+                        </p>
+                      ))}
+                    </details>
                   </td>
                 ))}
               </tr>
