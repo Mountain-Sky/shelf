@@ -1,8 +1,11 @@
 .explore {
-  --ink: #253c43;
-  --teal: #2e6878;
-  --rust: #ac471d;
-  background: #f7f6f1;
+  --ink: #24252b;
+  --teal: #5b4bc4;
+  --rust: #5b4bc4;
+  background: #fafafb;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--ink);
   min-height: 100vh;
   padding: 0 5vw 40px;
@@ -15,7 +18,7 @@
   align-items: center;
   gap: 32px;
   padding: 16px 0;
-  border-bottom: 1px solid #d3dcd9;
+  border-bottom: 1px solid #e5e5eb;
   flex-wrap: wrap;
 }
 .header a {
@@ -48,7 +51,7 @@
 }
 .header small {
   font-size: 10px;
-  background: #e1eae6;
+  background: #eeecfa;
   padding: 5px 8px;
   border-radius: 20px;
   margin-left: 5px;
@@ -66,9 +69,9 @@
   letter-spacing: 2px;
 }
 .intro h1 {
-  font-family: Georgia, serif;
+  font-family: inherit;
   font-size: clamp(34px, 4vw, 48px);
-  font-weight: 400;
+  font-weight: 650;
   letter-spacing: -2px;
   line-height: 1.12;
   margin: 10px 0 0;
@@ -76,44 +79,75 @@
 .intro p {
   font-size: 14px;
   line-height: 1.7;
-  color: #576b6d;
+  color: #71717e;
   margin: 0;
 }
 .composer {
-  background: white;
-  border: 1px solid #c3d1ce;
-  border-radius: 8px;
-  padding: 14px 18px;
-  box-shadow: 0 5px 18px #253c4305;
+  background: #fff;
+  border: 1px solid #e2e0eb;
+  border-radius: 24px;
+  padding: 20px 22px 14px;
+  box-shadow: 0 5px 24px #23203b06;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
-.composer label {
-  font-size: 12px;
-  color: var(--teal);
-  font-weight: 700;
+.composer:focus-within {
+  border-color: #9e92dc;
+  box-shadow:
+    0 0 0 3px #7260ca0c,
+    0 8px 28px #23203b08;
 }
-.composer > div {
+.composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 58px;
+  max-height: 180px;
+  resize: vertical;
+  border: 0;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+.composer textarea::placeholder {
+  color: #7c7b88;
+  opacity: 1;
+}
+.composerFooter {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px;
 }
-.composer input {
-  min-width: 0;
-  flex: 1;
-  border: 0;
-  background: transparent;
-  padding: 12px 0;
-  font-size: 17px;
-  color: var(--ink);
+.composerFooter > span {
+  font-size: 12px;
+  color: #71717e;
 }
 .composer button {
   display: flex;
   align-items: center;
-  gap: 16px;
-  background: var(--rust);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 4px;
-  font-weight: 650;
+  gap: 14px;
+  background: #292733;
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.composer button:disabled {
+  background: #eeedf2;
+  color: #777581;
+  opacity: 1;
+  cursor: default;
+}
+.composer button:not(:disabled):hover {
+  background: #5141a9;
 }
 .controls {
   display: flex;
@@ -121,7 +155,7 @@
   gap: 20px;
   flex-wrap: wrap;
   padding: 12px 0 18px;
-  border-bottom: 1px solid #d3dcd9;
+  border-bottom: 1px solid #e5e5eb;
   font-size: 12px;
 }
 .paths {
@@ -130,7 +164,7 @@
   margin-right: auto;
 }
 .paths button {
-  border: 1px solid #c5d4cd;
+  border: 1px solid #e1e0e9;
   border-radius: 30px;
   padding: 7px 13px;
   background: transparent;
@@ -143,7 +177,7 @@
 }
 .controls select {
   background: white;
-  border: 1px solid #c5d4cd;
+  border: 1px solid #e1e0e9;
   border-radius: 4px;
   padding: 8px;
   max-width: 210px;
@@ -172,7 +206,7 @@
 }
 .heading p {
   font-size: 12px;
-  color: #576b6d;
+  color: #71717e;
   flex-shrink: 0;
 }
 .criteria {
@@ -183,7 +217,7 @@
 }
 .criteria span {
   font-size: 11px;
-  background: #e1eae6;
+  background: #eeecfa;
   padding: 5px 10px;
   border-radius: 4px;
 }
@@ -191,7 +225,7 @@
   font-size: 13px;
   line-height: 1.6;
   max-width: 900px;
-  color: #576b6d;
+  color: #71717e;
 }
 .shelf {
   margin: 18px 0 30px;
@@ -207,7 +241,7 @@
 .shelf h3 span {
   font-size: 11px;
   font-weight: 400;
-  color: #687a78;
+  color: #71717e;
 }
 .books {
   display: grid;
@@ -236,7 +270,7 @@
   margin: 8px 0 0;
 }
 .art :global(.coverTitle) {
-  font-family: Georgia, serif;
+  font-family: inherit;
   font-size: clamp(17px, 1.7vw, 26px);
 }
 .art :global(.coverAuthor) {
@@ -269,7 +303,7 @@
 .volume > p {
   font-size: 11px;
   line-height: 1.5;
-  color: #687a78;
+  color: #71717e;
   margin: 0 0 8px;
 }
 .available,
@@ -284,7 +318,7 @@
   color: #77736b;
 }
 .anchor {
-  background: #e4ece8;
+  background: #eeecfa;
   padding: 18px;
   display: flex;
   gap: 18px;
@@ -333,19 +367,19 @@
   flex-wrap: wrap;
   gap: 10px;
   padding: 25px 0;
-  border-top: 1px solid #d3dcd9;
+  border-top: 1px solid #e5e5eb;
 }
 .subjects > span {
   width: 100%;
   font-size: 11px;
-  color: #687a78;
+  color: #71717e;
 }
 .subjects button {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 9px 12px;
-  background: #e4ece8;
+  background: #eeecfa;
   color: var(--teal);
   border-radius: 4px;
   font-size: 12px;
@@ -353,11 +387,11 @@
   text-align: left;
 }
 .footer {
-  border-top: 1px solid #d3dcd9;
+  border-top: 1px solid #e5e5eb;
   padding-top: 20px;
   font-size: 11px;
   line-height: 1.6;
-  color: #687a78;
+  color: #71717e;
 }
 .footer a {
   color: var(--teal);
@@ -431,9 +465,16 @@
   .composer > div {
     flex-wrap: wrap;
   }
-  .composer input {
-    flex-basis: 100%;
-    font-size: 16px;
+  .composer textarea {
+    font-size: 17px;
+  }
+  .composer {
+    padding: 17px 17px 13px;
+    border-radius: 20px;
+  }
+  .composerFooter > span {
+    max-width: 155px;
+    font-size: 11px;
   }
   .composer button {
     margin-left: auto;

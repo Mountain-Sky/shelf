@@ -345,6 +345,9 @@ export default function Home() {
                 Library account
               </button>
             )}
+            <a href="/explore" target="_blank" rel="noopener noreferrer">
+              Visual bookshelf <ArrowUpRight size={14} />
+            </a>
           </nav>
           <div className="demo-badge">
             <span /> Working demo{" "}

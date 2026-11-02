@@ -59,7 +59,9 @@ test("visual route uses Koha, preserves constraints and opens book details", asy
   await page
     .getByRole("textbox", { name: "Where should we go next?" })
     .fill("zzzzneveracatalogmatchzzzz");
-  await page.getByRole("button", { name: "Explore", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Where should we go next?" })
+    .press("Enter");
   await expect(collection).toHaveAttribute("aria-busy", "false");
   await expect(
     page.getByText("No verified matches on this shelf.", { exact: true }),
@@ -82,6 +84,14 @@ for (const width of [1280, 768, 390, 320])
       path: test.info().outputPath(`explore-${width}.png`),
     });
     await page.goto("/");
+    await expect(
+      page.getByRole("link", { name: "Visual bookshelf" }),
+    ).toHaveAttribute("href", "/explore");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
     await expect(
       page.getByRole("heading", { name: /Your next chapter/ }),
     ).toBeVisible();

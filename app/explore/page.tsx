@@ -62,7 +62,7 @@ export default function Explore() {
   const lock = useRef(false);
   const initialized = useRef(false);
   const detail = useRef<HTMLElement>(null);
-  const input = useRef<HTMLInputElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
   const opener = useRef<HTMLButtonElement | null>(null);
 
   async function navigate(message: string, options: Options = {}) {
@@ -241,16 +241,33 @@ export default function Explore() {
           void navigate(prompt);
         }}
       >
-        <label htmlFor="explore-prompt">Where should we go next?</label>
-        <div>
-          <input
-            ref={input}
-            id="explore-prompt"
-            value={prompt}
-            maxLength={500}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="A mystery, a favorite author, something like a book you loved…"
-          />
+        <label htmlFor="explore-prompt" className="sr-only">
+          Where should we go next?
+        </label>
+        <textarea
+          ref={input}
+          id="explore-prompt"
+          rows={2}
+          value={prompt}
+          maxLength={500}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (
+              e.key === "Enter" &&
+              !e.shiftKey &&
+              !e.nativeEvent.isComposing
+            ) {
+              e.preventDefault();
+              if (!busy && prompt.trim()) e.currentTarget.form?.requestSubmit();
+            }
+          }}
+          placeholder="What are you in the mood for?"
+          aria-describedby="explore-prompt-hint"
+        />
+        <div className={styles.composerFooter}>
+          <span id="explore-prompt-hint">
+            A mood. A favorite. A new direction.
+          </span>
           <button disabled={busy || !prompt.trim()} type="submit">
             {busy ? "Exploring…" : "Explore"}
             <ArrowRight size={18} />
