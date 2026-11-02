@@ -34,7 +34,7 @@ Let books and useful actions lead. Alternate layouts should improve discovery ra
 
 ## Controls and the visual bookshelf
 
-The `/explore` multiline composer is an intentional shape exception: a rounded 20–24px container and pill-shaped submit button are allowed. Keep its improved structure while using the same typography, rust action, white surface, and teal focus treatment as Shelf. Do not revert it to the original catalog-style input row merely to share the brand.
+Both routes use `app/components/DiscoveryComposer.module.css` for the shared multiline composer. It is an intentional shape exception: a rounded 20–24px container and pill-shaped submit button are allowed. Keep its improved structure while using the same typography, rust action, white surface, and teal focus treatment as Shelf. Do not revert it to the original catalog-style input row merely to share the brand.
 
 Keep an accessible label even when visually hidden. Enter submits, Shift+Enter inserts a line, and IME composition must not submit. Provide visible keyboard focus, readable placeholders, clear disabled/loading states, and wrapping layouts down to 320px. Respect reduced-motion preferences.
 

@@ -1,4 +1,5 @@
 "use client";
+import composer from "./components/DiscoveryComposer.module.css";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
@@ -378,19 +379,19 @@ export default function Home() {
               reading list for your next visit.
             </p>
             <form
-              className="discovery-composer"
+              className={`${composer.composer} ${composer.original}`}
               onSubmit={(e) => {
                 e.preventDefault();
                 void ask();
               }}
             >
-              <label htmlFor="discovery-query">
+              <label htmlFor="discovery-query" className="sr-only">
                 What would you love to read?
               </label>
               <textarea
                 id="discovery-query"
                 ref={input}
-                rows={3}
+                rows={2}
                 maxLength={500}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -405,14 +406,17 @@ export default function Home() {
                       e.currentTarget.form?.requestSubmit();
                   }
                 }}
-                placeholder="Tell us about a mood, a book you loved, or what you have planned…"
+                placeholder="What are you in the mood for?"
+                aria-describedby="discovery-prompt-hint"
               />
-              <div className="composer-footer">
-                <span>No perfect keywords needed.</span>
+              <div className={composer.composerFooter}>
+                <span id="discovery-prompt-hint">
+                  A mood. A favorite. A new direction.
+                </span>
                 <button type="submit" disabled={busy || !prompt.trim()}>
                   {busy ? <LoaderCircle className="spin" size={18} /> : null}
                   {busy ? "Finding your next read…" : "Find my next read"}
-                  {!busy && <ArrowUpRight size={18} />}
+                  {!busy && <ArrowRight size={18} />}
                 </button>
               </div>
             </form>

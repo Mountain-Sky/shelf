@@ -14,6 +14,7 @@ import {
   type SavedBook,
 } from "../ui/reading-list";
 import styles from "./explore.module.css";
+import composer from "../components/DiscoveryComposer.module.css";
 
 type Session = { id: string; revision: number };
 type ResponseData = {
@@ -235,7 +236,7 @@ export default function Explore() {
         </p>
       </section>
       <form
-        className={styles.composer}
+        className={composer.composer}
         onSubmit={(e) => {
           e.preventDefault();
           void navigate(prompt);
@@ -264,7 +265,7 @@ export default function Explore() {
           placeholder="What are you in the mood for?"
           aria-describedby="explore-prompt-hint"
         />
-        <div className={styles.composerFooter}>
+        <div className={composer.composerFooter}>
           <span id="explore-prompt-hint">
             A mood. A favorite. A new direction.
           </span>

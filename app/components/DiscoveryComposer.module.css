@@ -1,0 +1,97 @@
+.composer {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 20px 22px 14px;
+  box-shadow: 0 5px 24px color-mix(in srgb, var(--ink) 3%, transparent);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.composer:focus-within {
+  border-color: var(--green);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--green) 12%, transparent),
+    0 8px 28px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 58px;
+  max-height: 180px;
+  resize: vertical;
+  border: 0;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+.composer textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.composerFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px;
+}
+.composerFooter > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.composer button {
+  border: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--accent);
+  color: var(--paper);
+  padding: 11px 18px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.composer button:disabled {
+  background: var(--surface);
+  color: var(--muted);
+  opacity: 1;
+  cursor: default;
+}
+.composer button:not(:disabled):hover {
+  background: var(--accent-hover);
+}
+
+.original {
+  max-width: 650px;
+  margin-top: 28px;
+}
+@media (max-width: 650px) {
+  .composer > div {
+    flex-wrap: wrap;
+  }
+  .composer textarea {
+    font-size: 17px;
+  }
+  .composer {
+    padding: 17px 17px 13px;
+    border-radius: 20px;
+  }
+  .composerFooter > span {
+    max-width: 155px;
+    font-size: 11px;
+  }
+  .composer button {
+    margin-left: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer {
+    transition: none;
+  }
+}
