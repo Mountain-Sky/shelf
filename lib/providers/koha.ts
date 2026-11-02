@@ -310,9 +310,14 @@ export class KohaProvider implements CatalogProvider {
       "-like": `%${query.text.trim().replace(/[\\%_]/g, "\\$&")}%`,
     };
     const filter: ObjectValue = { opac_suppressed: 0 };
-    if (query.field === "title" || query.field === "author")
-      filter[query.field] = like;
-    else if (query.field === "identifier") filter.isbn = like;
+    if (query.field === "title") filter.title = like;
+    else if (query.field === "author") {
+      const words = query.text.match(/[\p{L}\p{N}]+/gu) ?? [];
+      if (!words.length) throw Error("Invalid author query");
+      filter["-and"] = words.map((word) => ({
+        author: { "-like": `%${word}%` },
+      }));
+    } else if (query.field === "identifier") filter.isbn = like;
     else if (query.field === "subject") filter["metadata.metadata"] = like;
     else if (query.field === "keyword")
       filter["-and"] = query.text

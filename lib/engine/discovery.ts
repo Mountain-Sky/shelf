@@ -388,7 +388,12 @@ export async function discover(
         };
   let reply =
     unsupportedReply ??
-    composeResponse(books, catalog.kind === "fixture", plan.clarification);
+    composeResponse(
+      books,
+      catalog.kind === "fixture",
+      plan.clarification,
+      plan.constraints.length > 0,
+    );
   if (/\b(?:tomorrow|next week|next month)\b/i.test(plan.query))
     reply +=
       " Only current availability can be checked. Future pickup availability is not confirmed, and no copy has been reserved.";

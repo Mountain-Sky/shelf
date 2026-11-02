@@ -116,7 +116,7 @@ export default function Home() {
     setBusy(true);
     setError("");
     setContextLost(false);
-    setPrompt("");
+    if (!options.quiet) setPrompt(q);
     try {
       const response = await fetch("/api/chat", {
         method: "POST",

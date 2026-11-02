@@ -272,7 +272,7 @@ export function queriesFor(plan: Plan): CatalogQuery[] {
       },
     ];
   const author =
-    /^(?:(?:find|show me)\s+)?(?:books?\s+by|author:)\s*(.+)$/i.exec(
+    /^(?:(?:find|show me|I want|I would like|I’d like|I\'d like|recommend|can you recommend)\s+)?(?:some\s+)?(?:books?\s+by|author:)\s*(.+)$/i.exec(
       plan.query,
     );
   if (author)

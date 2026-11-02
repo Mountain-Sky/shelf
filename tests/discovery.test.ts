@@ -647,3 +647,35 @@ test("availability intent does not make unrelated keyword results relevant", asy
     ["browse"],
   );
 });
+
+test("author matching accepts catalog surname-first order without matching partial names", async () => {
+  const original = structuredClone(catalogRecords[0]);
+  const make = (id: string, name: string) => ({
+    ...original,
+    ref: { provider: "demo", id },
+    contributors: [{ name, role: "author" }],
+  });
+  const catalog: CatalogProvider = {
+    ...mockProvider,
+    search: async () => ({
+      records: [
+        make("dickens", "Dickens, Charles,"),
+        make("other", "Dickens, Charlesworth,"),
+      ],
+      complete: true,
+    }),
+  };
+  const result = await search(
+    "I want books by Charles Dickens",
+    undefined,
+    catalog,
+  );
+  assert.equal(result.books.length, 1);
+  assert.equal(result.books[0].author, "Dickens, Charles,");
+  assert.equal(result.trace.queries[0].query.field, "author");
+});
+test("unmatched unconstrained request explains catalog coverage and correction", async () => {
+  const result = await search("i brad metzer");
+  assert.equal(result.books.length, 0);
+  assert.match(result.reply, /spelling may differ/);
+});

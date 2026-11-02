@@ -187,3 +187,30 @@ test("cataloged mystery pickup uses real Centerville holdings", async ({
   ).toBeVisible();
   await expect(page.getByRole("article")).toHaveCount(1);
 });
+
+test("conversational author search and editable no-result requests", async ({
+  page,
+}) => {
+  await ready(page);
+  await search(page, "I want books by Charles Dickens");
+  await expect(
+    page.getByRole("article", { name: "Bleak House /", exact: true }),
+  ).toBeVisible();
+  const input = page.getByRole("textbox", {
+    name: "What would you love to read?",
+  });
+  await expect(input).toHaveValue("I want books by Charles Dickens");
+  await search(page, "i brad metzer");
+  await expect(page.locator(".conversation")).toContainText(
+    "spelling may differ",
+  );
+  await expect(page.getByRole("article")).toHaveCount(0);
+  await expect(input).toHaveValue("i brad metzer");
+  await input.fill("Find mystery");
+  await input.press("Enter");
+  await expect(page.locator("#discoveries")).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
+  await expect(page.getByRole("article").first()).toBeVisible();
+});

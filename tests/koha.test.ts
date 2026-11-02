@@ -546,15 +546,54 @@ test("subject candidates require parsed MARC evidence and matching detail identi
   }
 });
 
-test('MARC enrichment keeps supplied metadata and explicit genre/format evidence', () => {
- const p=parseKohaMarc({fields:[
- {'999':{subfields:[{c:'42'}]}}, {'520':{subfields:[{a:'Catalog synopsis'}]}},
- {'041':{subfields:[{a:'eng'}]}}, {'300':{subfields:[{a:'xii, 312 pages'}]}},
- {'020':{subfields:[{a:'9780547928227 (paperback)'}]}},
- {'700':{subfields:[{a:'Other, Author'}]}}, {'655':{subfields:[{a:'Fantasy fiction.'}]}}
- ]});
- assert.equal(p.summary,'Catalog synopsis');assert.equal(p.language,'eng');assert.equal(p.pages,312);
- assert.deepEqual(p.isbns,['9780547928227']);assert.deepEqual(p.contributors,['Other, Author']);
- assert.ok(p.subjects.includes('fantasy'));assert.equal(p.format,undefined);
- assert.ok(!p.subjects.includes('nonfiction'));
+test("MARC enrichment keeps supplied metadata and explicit genre/format evidence", () => {
+  const p = parseKohaMarc({
+    fields: [
+      { "999": { subfields: [{ c: "42" }] } },
+      { "520": { subfields: [{ a: "Catalog synopsis" }] } },
+      { "041": { subfields: [{ a: "eng" }] } },
+      { "300": { subfields: [{ a: "xii, 312 pages" }] } },
+      { "020": { subfields: [{ a: "9780547928227 (paperback)" }] } },
+      { "700": { subfields: [{ a: "Other, Author" }] } },
+      { "655": { subfields: [{ a: "Fantasy fiction." }] } },
+    ],
+  });
+  assert.equal(p.summary, "Catalog synopsis");
+  assert.equal(p.language, "eng");
+  assert.equal(p.pages, 312);
+  assert.deepEqual(p.isbns, ["9780547928227"]);
+  assert.deepEqual(p.contributors, ["Other, Author"]);
+  assert.ok(p.subjects.includes("fantasy"));
+  assert.equal(p.format, undefined);
+  assert.ok(!p.subjects.includes("nonfiction"));
+});
+
+test("Koha author search requires every name token regardless of catalog order", async () => {
+  const f = await fixture((_url, _req, res) =>
+    reply(res, [biblio({ author: "Dickens, Charles," })], 1),
+  );
+  try {
+    await f.provider.search(
+      { field: "author", text: "Charles Dickens", limit: 20 },
+      signal(),
+    );
+    const request = f.requests.find(
+      (r) =>
+        r.path.includes("biblios?") &&
+        JSON.parse(
+          new URL(r.path, "http://localhost").searchParams.get("q") || "{}",
+        )["-and"],
+    );
+    assert.ok(request);
+    const filter = JSON.parse(
+      new URL(request.path, "http://localhost").searchParams.get("q")!,
+    );
+    assert.deepEqual(filter["-and"], [
+      { author: { "-like": "%Charles%" } },
+      { author: { "-like": "%Dickens%" } },
+    ]);
+    assert.equal(filter.opac_suppressed, 0);
+  } finally {
+    await f.close();
+  }
 });

@@ -10,6 +10,13 @@ export function evidenceValues(
     summary: r.summary ? [r.summary] : [],
   };
 }
+function authorMatches(name: string, query: string): boolean {
+  const words = (value: string) =>
+    value.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+  const wanted = words(query),
+    actual = new Set(words(name));
+  return wanted.length > 0 && wanted.every((word) => actual.has(word));
+}
 export function rankRecords(records: CatalogRecord[], plan: Plan): Ranked[] {
   const p = plan.preferences;
   const authorQuery = plan.queries.find((q) => q.field === "author");
@@ -19,7 +26,7 @@ export function rankRecords(records: CatalogRecord[], plan: Plan): Ranked[] {
       (r) =>
         (!authorQuery ||
           r.contributors.some((c) =>
-            c.name.toLowerCase().includes(authorQuery.text.toLowerCase()),
+            authorMatches(c.name, authorQuery.text),
           )) &&
         (!identifierQuery ||
           r.identifiers.some(
@@ -35,7 +42,7 @@ export function rankRecords(records: CatalogRecord[], plan: Plan): Ranked[] {
     )
     .map((record) => {
       const fields = evidenceValues(record);
-      let score = 0;
+      let score = authorQuery ? 40 : 0;
       const evidence: Evidence[] = [];
       for (const term of plan.expandedQueries) {
         for (const [field, weight] of [
