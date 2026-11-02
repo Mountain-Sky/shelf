@@ -8,11 +8,15 @@ async function ready(page: Page) {
   await expect(page.locator(".demo-badge")).toContainText("Koha sandbox");
 }
 async function search(page: Page, title: string) {
-  await page.getByRole("textbox", { name: "Describe a book" }).fill(title);
+  await page
+    .getByRole("textbox", { name: "What would you love to read?" })
+    .fill(title);
   const response = page.waitForResponse(
     (r) => r.url().endsWith("/api/chat") && r.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Find my next read", exact: true })
+    .click();
   const data = await (await response).json();
   expect(data.source).toBe("koha");
   await expect(page.locator("#discoveries")).toHaveAttribute(

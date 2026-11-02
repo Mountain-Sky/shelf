@@ -13,8 +13,12 @@ async function ready(page: Page) {
   );
 }
 async function search(page: Page, message: string) {
-  await page.getByRole("textbox", { name: "Describe a book" }).fill(message);
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "What would you love to read?" })
+    .fill(message);
+  await page
+    .getByRole("button", { name: "Find my next read", exact: true })
+    .click();
   await expect(page.locator("#discoveries")).toHaveAttribute(
     "aria-busy",
     "false",
@@ -58,9 +62,9 @@ test("complete bookshelf search, branch, inspector, reading list and empty-state
   ).toContainText("mystery");
   await search(page, "zzzxxyy");
   await expect(cards(page)).toHaveCount(0);
-  await expect(
-    page.locator(".empty"),
-  ).toContainText("No demo titles matched the supported constraints");
+  await expect(page.locator(".empty")).toContainText(
+    "No demo titles matched the supported constraints",
+  );
   await page.getByRole("button", { name: "Start fresh", exact: true }).click();
   await expect(cards(page)).toHaveCount(12);
 });
@@ -160,7 +164,7 @@ test("failed request preserves input and exact request retry succeeds", async ({
     "Discovery is unavailable",
   );
   await expect(
-    page.getByRole("textbox", { name: "Describe a book" }),
+    page.getByRole("textbox", { name: "What would you love to read?" }),
   ).toHaveValue("The Hobbit");
   await page.getByRole("button", { name: "Retry search" }).click();
   await expect(

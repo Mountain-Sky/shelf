@@ -22,9 +22,11 @@ test("private production app protects page and API; an authenticated reviewer ca
   await page.goto("http://127.0.0.1:3102");
   await expect(page.locator("article.book").first()).toBeVisible();
   await page
-    .getByRole("textbox", { name: "Describe a book" })
+    .getByRole("textbox", { name: "What would you love to read?" })
     .fill("The Hobbit");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Find my next read", exact: true })
+    .click();
   await expect(
     page.getByRole("article", { name: "The Hobbit", exact: true }),
   ).toBeVisible();

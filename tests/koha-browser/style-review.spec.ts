@@ -73,9 +73,11 @@ for (const width of [1280, 768, 390, 320])
     await cards.first().locator("summary").click();
     await check("edition");
     await page
-      .getByRole("textbox", { name: "Describe a book" })
+      .getByRole("textbox", { name: "What would you love to read?" })
       .fill("I want a mystery to pick up tomorrow at Rust");
-    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Find my next read", exact: true })
+      .click();
     await expect(page.locator(".empty")).toBeVisible();
     await page.locator(".empty").scrollIntoViewIfNeeded();
     await check("empty");

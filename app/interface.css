@@ -690,3 +690,119 @@ h3,
   outline: 3px solid var(--green);
   outline-offset: 3px;
 }
+
+/* Discovery starts with a thought, not a catalog field. */
+.discovery-composer {
+  max-width: 650px;
+  margin-top: 28px;
+  padding: 22px;
+  background: #f6f9fa;
+  border: 1px solid #afc5cd;
+  border-top: 3px solid var(--green);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #263b4408;
+}
+.discovery-composer:focus-within {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px #326d8015;
+}
+.discovery-composer > label {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.discovery-composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 98px;
+  resize: vertical;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 17px/1.6 var(--sans);
+}
+.discovery-composer textarea::placeholder {
+  color: #647680;
+  opacity: 1;
+}
+.discovery-composer textarea:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 5px;
+  border-radius: 2px;
+}
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.composer-footer > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.composer-footer button {
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+.composer-footer button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.discovery-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 12px;
+  max-width: 650px;
+}
+.discovery-prompts > span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-right: 2px;
+}
+.discovery-prompts button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 7px 12px;
+  color: #285b6c;
+  background: white;
+  font-size: 12px;
+}
+.discovery-prompts button:hover:not(:disabled) {
+  background: var(--surface-selected);
+  border-color: var(--green);
+}
+@media (max-width: 540px) {
+  .discovery-composer {
+    padding: 18px;
+    margin-top: 22px;
+  }
+  .discovery-composer > label {
+    font-size: 17px;
+  }
+  .discovery-composer textarea {
+    font-size: 16px;
+    min-height: 120px;
+  }
+  .composer-footer {
+    flex-wrap: wrap;
+  }
+  .composer-footer button {
+    width: 100%;
+  }
+  .discovery-prompts button {
+    min-height: 44px;
+  }
+}

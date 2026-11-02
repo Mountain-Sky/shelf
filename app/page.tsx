@@ -106,7 +106,7 @@ export default function Home() {
   const session = useRef<Session | undefined>(undefined);
   const inFlight = useRef(false);
   const initialized = useRef(false);
-  const input = useRef<HTMLInputElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
   const collection = useRef<HTMLElement>(null);
   const shelf = useRef<HTMLElement>(null);
   async function ask(message = prompt, options: SearchOptions = {}) {
@@ -373,45 +373,76 @@ export default function Home() {
               reading list for your next visit.
             </p>
             <form
-              className="searchbox"
+              className="discovery-composer"
               onSubmit={(e) => {
                 e.preventDefault();
                 void ask();
               }}
             >
-              <Search size={22} aria-hidden="true" />
-              <label className="sr-only" htmlFor="discovery-query">
-                Describe a book
+              <label htmlFor="discovery-query">
+                What would you love to read?
               </label>
-              <input
+              <textarea
                 id="discovery-query"
                 ref={input}
+                rows={3}
                 maxLength={500}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder={
-                  source === "koha"
-                    ? "Search a title, author, or ISBN…"
-                    : "A funny mystery. A hopeful story. Something like…"
-                }
-                autoComplete="off"
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    !e.nativeEvent.isComposing
+                  ) {
+                    e.preventDefault();
+                    if (!busy && prompt.trim())
+                      e.currentTarget.form?.requestSubmit();
+                  }
+                }}
+                placeholder="Tell us about a mood, a book you loved, or what you have planned…"
               />
-              <button
-                type="submit"
-                aria-label="Search"
-                disabled={busy || !prompt.trim()}
-              >
-                {busy ? (
-                  <LoaderCircle className="spin" size={20} />
-                ) : (
-                  <Search size={21} />
-                )}
-              </button>
+              <div className="composer-footer">
+                <span>No perfect keywords needed.</span>
+                <button type="submit" disabled={busy || !prompt.trim()}>
+                  {busy ? <LoaderCircle className="spin" size={18} /> : null}
+                  {busy ? "Finding your next read…" : "Find my next read"}
+                  {!busy && <ArrowUpRight size={18} />}
+                </button>
+              </div>
             </form>
+            <div
+              className="discovery-prompts"
+              aria-label="Ideas to get started"
+            >
+              <span>Try a thought:</span>
+              {[
+                {
+                  label: "A mystery for tomorrow",
+                  text: `I want a mystery to pick up tomorrow at ${source === "koha" ? "Centerville" : "Rust"}`,
+                },
+                {
+                  label: "More like a favorite",
+                  text: "Something like The Left Hand of Darkness",
+                },
+                { label: "Explore a genre", text: "Find fantasy" },
+              ].map((example) => (
+                <button
+                  key={example.label}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    setPrompt(example.text);
+                    input.current?.focus();
+                  }}
+                >
+                  {example.label}
+                </button>
+              ))}
+            </div>
             <p className="search-hint">
-              {source === "koha"
-                ? "Search titles, authors, ISBNs, or cataloged genres. Branch availability is checked now; no copies are reserved."
-                : "Your words are enough. Titles, authors, subjects, or just a mood."}
+              Tell us what matters. We’ll match it to catalog details and
+              current availability.
             </p>
           </div>
           <figure className="hero-editorial">
