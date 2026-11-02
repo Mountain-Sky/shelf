@@ -806,3 +806,13 @@ h3,
     min-height: 44px;
   }
 }
+
+/* Keep the alternative experience reachable at every viewport width. */
+.site-header nav .experience-link {
+  display: inline-flex;
+}
+@media (max-width: 760px) {
+  .site-header nav {
+    flex-wrap: wrap;
+  }
+}

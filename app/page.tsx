@@ -345,7 +345,12 @@ export default function Home() {
                 Library account
               </button>
             )}
-            <a href="/explore" target="_blank" rel="noopener noreferrer">
+            <a
+              className="experience-link"
+              href="/explore"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Visual bookshelf <ArrowUpRight size={14} />
             </a>
           </nav>
