@@ -360,9 +360,6 @@ export default function Home() {
         </header>
         <section className="hero" aria-labelledby="hero-heading">
           <div className="hero-copy">
-            <div className="eyebrow">
-              <span className="tiny-star">✳</span> YOUR NEXT CHAPTER STARTS HERE
-            </div>
             <h1 id="hero-heading">
               Your next chapter.
               <br />
