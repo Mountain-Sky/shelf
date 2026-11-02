@@ -37,7 +37,11 @@ function totalCount(response: Response): number | undefined {
 }
 async function json(response: Response): Promise<unknown> {
   if (!response.ok) throw Error(`Koha request failed (${response.status}).`);
-  if (!response.headers.get("content-type")?.includes("application/json"))
+  if (
+    !/^application\/(?:json|marc-in-json)(?:;|$)/.test(
+      response.headers.get("content-type") ?? "",
+    )
+  )
     throw Error("Koha returned a non-JSON response.");
   const reader = response.body?.getReader();
   if (!reader) throw Error("Koha response is empty.");
@@ -88,7 +92,7 @@ export class KohaProvider implements CatalogProvider {
   readonly id = "koha";
   readonly kind = "catalog" as const;
   readonly capabilities: CatalogProvider["capabilities"] = {
-    fields: ["keyword", "title", "author", "identifier", "browse"],
+    fields: ["keyword", "title", "author", "identifier", "subject", "browse"],
   };
   private readonly base: string;
   private token?: { value: string; expires: number };
@@ -168,13 +172,18 @@ export class KohaProvider implements CatalogProvider {
     }
     return this.tokenRequest;
   }
-  private async get(path: string, signal: AbortSignal, embed?: string) {
+  private async get(
+    path: string,
+    signal: AbortSignal,
+    embed?: string,
+    accept = "application/json",
+  ) {
     const token = await this.accessToken(signal);
     const response = await fetch(`${this.base}${path}`, {
       redirect: "error",
       signal,
       headers: {
-        Accept: "application/json",
+        Accept: accept,
         Authorization: `Bearer ${token}`,
         ...(embed ? { "x-koha-embed": embed } : {}),
       },
@@ -251,6 +260,7 @@ export class KohaProvider implements CatalogProvider {
     if (query.field === "title" || query.field === "author")
       filter[query.field] = like;
     else if (query.field === "identifier") filter.isbn = like;
+    else if (query.field === "subject") filter["metadata.metadata"] = like;
     else if (query.field === "keyword")
       filter["-and"] = query.text
         .trim()
@@ -258,7 +268,12 @@ export class KohaProvider implements CatalogProvider {
         .map((term) => {
           const match = { "-like": `%${term.replace(/[\\%_]/g, "\\$&")}%` };
           return {
-            "-or": [{ title: match }, { author: match }, { abstract: match }],
+            "-or": [
+              { title: match },
+              { author: match },
+              { abstract: match },
+              { "metadata.metadata": match },
+            ],
           };
         });
     const params = new URLSearchParams({
@@ -267,17 +282,59 @@ export class KohaProvider implements CatalogProvider {
       _order_by: "+biblio_id",
       q: JSON.stringify(filter),
     });
-    const { data, total } = await this.get(`/biblios?${params}`, signal);
+    // MARC representation prefetches metadata in pinned Koha, permitting bounded
+    // metadata candidate retrieval. Only parsed subject fields establish genre evidence.
+    const { data, total } = await this.get(
+      `/biblios?${params}`,
+      signal,
+      undefined,
+      "application/marc-in-json",
+    );
     if (
       !Array.isArray(data) ||
       data.length > query.limit ||
       (total !== undefined && total < data.length)
     )
       throw Error("Invalid Koha search page.");
+    const metadata = new Map(
+      data.map((raw) => {
+        const parsed = parseKohaMarc(raw);
+        return [parsed.id, parsed.subjects] as const;
+      }),
+    );
+    if (metadata.size !== data.length)
+      throw Error("Duplicate Koha MARC identity.");
     const observedAt = new Date().toISOString();
-    const records = data
-      .map((r) => this.mapRecord(r, observedAt))
-      .filter((r): r is CatalogRecord => !!r);
+    let records: CatalogRecord[] = [];
+    if (metadata.size) {
+      // Recheck visibility using the normal bibliographic representation. Never join
+      // records by list position or MARC 001, which is not Koha's internal identity.
+      const details = new URLSearchParams({
+        _per_page: String(query.limit),
+        _order_by: "+biblio_id",
+        q: JSON.stringify({
+          opac_suppressed: 0,
+          biblio_id: { "-in": [...metadata.keys()].map(Number) },
+        }),
+      });
+      const response = await this.get(`/biblios?${details}`, signal);
+      if (!Array.isArray(response.data) || response.data.length > query.limit)
+        throw Error("Invalid Koha details.");
+      const seen = new Set<string>();
+      for (const raw of response.data) {
+        const record = this.mapRecord(raw, observedAt);
+        if (!record) continue;
+        if (!metadata.has(record.ref.id) || seen.has(record.ref.id))
+          throw Error("Mismatched Koha MARC identity.");
+        seen.add(record.ref.id);
+        record.subjects = metadata.get(record.ref.id)!;
+        if (
+          query.field !== "subject" ||
+          record.subjects.some((s) => s.includes(query.text.toLowerCase()))
+        )
+          records.push(record);
+      }
+    }
     return {
       records,
       ...((total === undefined
@@ -385,4 +442,59 @@ export class KohaProvider implements CatalogProvider {
     );
     return output.flat();
   }
+}
+
+/** MARC21 only: retain catalog headings and add narrowly evidenced genre aliases. */
+export function parseKohaMarc(raw: unknown): {
+  id: string;
+  subjects: string[];
+} {
+  if (!object(raw) || !Array.isArray(raw.fields))
+    throw Error("Invalid Koha MARC record.");
+  let recordId: string | undefined;
+  const subjects = new Set<string>();
+  for (const field of raw.fields) {
+    if (!object(field)) throw Error("Invalid Koha MARC field.");
+    for (const [tag, value] of Object.entries(field)) {
+      if (!["999", "650", "651", "655"].includes(tag)) continue;
+      if (!object(value) || !Array.isArray(value.subfields))
+        throw Error("Invalid Koha MARC subfields.");
+      const parts: string[] = [];
+      for (const subfield of value.subfields) {
+        if (!object(subfield)) throw Error("Invalid Koha MARC subfield.");
+        for (const [code, text] of Object.entries(subfield)) {
+          if (typeof text !== "string") throw Error("Invalid Koha MARC text.");
+          if (tag === "999" && code === "c") {
+            if (recordId || !/^[1-9]\d*$/.test(text))
+              throw Error("Invalid Koha MARC identity.");
+            recordId = text;
+          } else if (
+            tag !== "999" &&
+            ["a", "v", "x", "y", "z"].includes(code)
+          ) {
+            const normalized = text
+              .trim()
+              .toLowerCase()
+              .replace(/[.,;:]+$/, "");
+            if (normalized) {
+              parts.push(normalized);
+              subjects.add(normalized);
+            }
+          }
+        }
+      }
+      if (parts.length) subjects.add(parts.join(" — "));
+      if (
+        tag === "655" &&
+        parts.some((p) =>
+          /^(detective and mystery (stories|fiction)|mystery (stories|fiction))$/.test(
+            p,
+          ),
+        )
+      )
+        subjects.add("mystery");
+    }
+  }
+  if (!recordId) throw Error("Missing Koha MARC identity (999$c).");
+  return { id: recordId, subjects: [...subjects] };
 }

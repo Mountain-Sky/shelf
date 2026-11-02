@@ -6,7 +6,7 @@ import {
   type ServerResponse,
 } from "node:http";
 import type { AddressInfo } from "node:net";
-import { KohaProvider } from "../lib/providers/koha";
+import { KohaProvider, parseKohaMarc } from "../lib/providers/koha";
 import type { CatalogQuery } from "../lib/types";
 
 // Protocol fixtures exercise transport and mappings; they are not a live Koha instance.
@@ -33,7 +33,23 @@ const item = (changes: Record<string, unknown> = {}) => ({
   ...changes,
 });
 function reply(res: ServerResponse, value: unknown, total?: number) {
-  res.setHeader("Content-Type", "application/json");
+  const marc = res.getHeader("X-Test-Marc") === "1";
+  res.removeHeader("X-Test-Marc");
+  if (marc && Array.isArray(value))
+    value = value.map((raw) =>
+      raw && typeof raw === "object" && "biblio_id" in raw
+        ? {
+            fields: [
+              { "999": { subfields: [{ c: String(raw.biblio_id) }] } },
+              ...(raw.marcFields ?? []),
+            ],
+          }
+        : raw,
+    );
+  res.setHeader(
+    "Content-Type",
+    marc ? "application/marc-in-json" : "application/json",
+  );
   if (total !== undefined) res.setHeader("X-Total-Count", String(total));
   res.end(JSON.stringify(value));
 }
@@ -65,6 +81,13 @@ async function fixture(handler: Handler) {
       });
       return;
     }
+    if (req.headers.accept === "application/marc-in-json")
+      res.setHeader("X-Test-Marc", "1");
+    const detailFilter = JSON.parse(url.searchParams.get("q") || "{}");
+    const requestedIds = detailFilter.biblio_id?.["-in"];
+    // Handlers still own the response; expose the requested page to the paging fixture.
+    if (requestedIds?.length === 1 && requestedIds[0] === 44)
+      url.searchParams.set("_page", "2");
     handler(url, req, res);
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -128,7 +151,7 @@ test("Koha maps only supplied bibliographic facts and omits suppressed or unveri
     assert.equal(unknown.summary, undefined);
     assert.deepEqual(unknown.contributors, []);
     assert.deepEqual(unknown.identifiers, []);
-    assert.ok(!f.provider.capabilities.fields.includes("subject"));
+    assert.ok(f.provider.capabilities.fields.includes("subject"));
   } finally {
     await f.close();
   }
@@ -160,7 +183,7 @@ test("Koha encodes literal query text, bounded pagination and shares OAuth acros
       title: { "-like": "%100\\%\\_\\\\?&%" },
     });
     assert.equal(firstUrl.searchParams.get("_per_page"), "1");
-    assert.equal(urls[2].searchParams.get("_page"), "2");
+    assert.ok(urls.some((u) => u.searchParams.get("_page") === "2"));
     assert.ok(
       f.requests
         .filter((r) => !r.path.includes("oauth"))
@@ -179,7 +202,7 @@ test("Koha encodes literal query text, bounded pagination and shares OAuth acros
       /cursor/,
     );
     await assert.rejects(
-      f.provider.search({ ...query, field: "subject" }, signal()),
+      f.provider.search({ ...query, field: "unsupported" as never }, signal()),
       /Unsupported/,
     );
     assert.equal(f.requests.length, count);
@@ -413,7 +436,8 @@ test("Koha configuration refuses unsafe origins and missing explicit library map
 test("Koha keyword retrieval matches terms across metadata rather than requiring a contiguous phrase", async () => {
   let query: unknown;
   const f = await fixture((url, _req, res) => {
-    query = JSON.parse(url.searchParams.get("q")!);
+    if (_req.headers.accept === "application/marc-in-json")
+      query = JSON.parse(url.searchParams.get("q")!);
     reply(res, [biblio()], 1);
   });
   try {
@@ -424,11 +448,99 @@ test("Koha keyword retrieval matches terms across metadata rather than requiring
     assert.deepEqual(query, {
       opac_suppressed: 0,
       "-and": ["left", "hand", "darkness"].map((term) => ({
-        "-or": ["title", "author", "abstract"].map((field) => ({
-          [field]: { "-like": `%${term}%` },
-        })),
+        "-or": ["title", "author", "abstract", "metadata.metadata"].map(
+          (field) => ({
+            [field]: { "-like": `%${term}%` },
+          }),
+        ),
       })),
     });
+  } finally {
+    await f.close();
+  }
+});
+
+test("MARC subject parsing preserves headings, ignores authority IDs, and does not infer mystery from titles", () => {
+  const parsed = parseKohaMarc({
+    fields: [
+      { "999": { subfields: [{ c: "123" }] } },
+      { "245": { subfields: [{ a: "A mystery title" }] } },
+      {
+        "650": {
+          subfields: [
+            { a: "Police." },
+            { z: "Sweden." },
+            { v: "Fiction." },
+            { "9": "377" },
+          ],
+        },
+      },
+      {
+        "655": {
+          subfields: [
+            { a: "Detective and mystery stories." },
+            { "2": "lcgft" },
+          ],
+        },
+      },
+    ],
+  });
+  assert.equal(parsed.id, "123");
+  assert.ok(parsed.subjects.includes("mystery"));
+  assert.ok(parsed.subjects.includes("detective and mystery stories"));
+  assert.ok(!parsed.subjects.includes("377"));
+  assert.deepEqual(
+    parseKohaMarc({
+      fields: [
+        { "999": { subfields: [{ c: "2" }] } },
+        { "245": { subfields: [{ a: "Mystery" }] } },
+      ],
+    }).subjects,
+    [],
+  );
+  assert.throws(
+    () => parseKohaMarc({ fields: [{ "001": "123" }] }),
+    /identity/,
+  );
+});
+
+test("subject candidates require parsed MARC evidence and matching detail identities", async () => {
+  let mismatch = false;
+  const f = await fixture((_url, req, res) => {
+    reply(
+      res,
+      [
+        biblio({
+          biblio_id:
+            mismatch && req.headers.accept === "application/json" ? 99 : 42,
+          marcFields: [
+            { "655": { subfields: [{ a: "Detective and mystery stories." }] } },
+          ],
+        }),
+      ],
+      1,
+    );
+  });
+  try {
+    const result = await f.provider.search(
+      { field: "subject", text: "mystery", limit: 20 },
+      signal(),
+    );
+    assert.deepEqual(result.records[0].subjects, [
+      "detective and mystery stories",
+      "mystery",
+    ]);
+    assert.equal(
+      (
+        await f.provider.search(
+          { field: "subject", text: "romance", limit: 20 },
+          signal(),
+        )
+      ).records.length,
+      0,
+    );
+    mismatch = true;
+    await assert.rejects(f.provider.search(browse, signal()), /identity/);
   } finally {
     await f.close();
   }

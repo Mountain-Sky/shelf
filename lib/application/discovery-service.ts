@@ -124,7 +124,7 @@ export async function search(request: SearchRequest) {
         result.source === "koha"
           ? [
               ...result.notices,
-              "Koha sandbox search currently covers titles, authors and summaries. Subject metadata is not supplied by this adapter, so genre filters and similar-title discovery have limited coverage.",
+              "Koha sandbox subjects come from MARC21 catalog headings. Genre coverage depends on cataloging; holdings are current sandbox observations, not reservations.",
             ]
           : result.notices,
       session,

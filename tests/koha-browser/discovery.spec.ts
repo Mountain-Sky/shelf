@@ -153,10 +153,33 @@ test("mystery pickup request does not display unrelated Koha books", async ({
   await search(page, "I want a mystery to pick up tomorrow at Rust");
   await expect(page.getByRole("article")).toHaveCount(0);
   await expect(page.getByLabel("Look at")).toHaveValue("RUST");
-  await expect(page.locator(".empty")).toContainText(
-    "Genre metadata is unavailable",
-  );
+  await expect(page.locator(".empty")).toContainText("No titles matched");
   await expect(page.locator(".empty")).toContainText(
     "Future pickup availability is not confirmed",
   );
+});
+
+test("cataloged mystery pickup uses real Centerville holdings", async ({
+  page,
+}) => {
+  await ready(page);
+  await search(page, "I want a mystery to pick up tomorrow at Centerville");
+  const card = page.getByRole("article", {
+    name: "Before the frost /",
+    exact: true,
+  });
+  await expect(card).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(1);
+  await expect(page.getByLabel("Look at")).toHaveValue("CPL");
+  await expect(card.locator(".branch-holdings")).toContainText(
+    /Centerville\s*1 available/,
+  );
+  await expect(page.locator(".conversation .assistant")).toContainText(
+    "Future pickup availability is not confirmed",
+  );
+  await page.getByLabel("Look at").selectOption("MPL");
+  await expect(
+    page.getByRole("article", { name: "The ice princess /", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(1);
 });

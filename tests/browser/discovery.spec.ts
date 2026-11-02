@@ -59,8 +59,8 @@ test("complete bookshelf search, branch, inspector, reading list and empty-state
   await search(page, "zzzxxyy");
   await expect(cards(page)).toHaveCount(0);
   await expect(
-    page.getByText("No matching demo titles yet. Try a broader search."),
-  ).toBeVisible();
+    page.locator(".empty"),
+  ).toContainText("No demo titles matched the supported constraints");
   await page.getByRole("button", { name: "Start fresh", exact: true }).click();
   await expect(cards(page)).toHaveCount(12);
 });

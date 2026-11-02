@@ -393,7 +393,7 @@ export default function Home() {
             </form>
             <p className="search-hint">
               {source === "koha"
-                ? "Search titles, authors, or ISBNs in Koha. Genre and similar-book discovery have limited coverage."
+                ? "Search titles, authors, ISBNs, or cataloged genres. Branch availability is checked now; no copies are reserved."
                 : "Your words are enough. Titles, authors, subjects, or just a mood."}
             </p>
           </div>
@@ -840,9 +840,7 @@ export default function Home() {
                       "An adventure for kids",
                     ]
                 )
-                  .filter(
-                    (q) => source !== "koha" || !/myster|more like/i.test(q),
-                  )
+
                   .slice(0, 3)
                   .map((q) => (
                     <button key={q} disabled={busy} onClick={() => void ask(q)}>

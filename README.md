@@ -48,7 +48,7 @@ The committed npm lockfile makes installs reproducible. `npm audit` checks known
 
 ## Optional Koha sandbox
 
-An opt-in, read-only Koha REST provider is available without changing the Next.js architecture. See [Koha sandbox provider](docs/koha.md) for server-only OAuth configuration, source contracts, limited subject/genre coverage, and live validation. The default demo still uses fixtures; enabling this adapter does not provision or host Koha.
+An opt-in, read-only Koha REST provider is available without changing the Next.js architecture. See [Koha sandbox provider](docs/koha.md) for server-only OAuth configuration, source contracts, MARC21 subject/genre coverage, and live validation. The default demo still uses fixtures; enabling this adapter does not provision or host Koha.
 
 ## Optional AI
 

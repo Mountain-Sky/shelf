@@ -18,9 +18,9 @@ The adapter calls only `POST /api/v1/oauth/token`, `GET /api/v1/biblios`, and `G
 
 ## Capabilities and limits
 
-- Search: browse, title, author, ISBN and basic keyword matching over title/author/abstract. Queries use encoded JSON filters, bounded pages and a stable record-ID sort. This is relational catalog retrieval, not Koha's full Zebra/Elasticsearch OPAC search.
+- Search: browse, title, author, ISBN and keyword candidate matching over title/author/abstract/MARC metadata plus parsed subject searches. Queries use encoded JSON filters, bounded pages and a stable record-ID sort. This is relational catalog retrieval, not Koha's full Zebra/Elasticsearch OPAC search.
 - Bibliography: source IDs, title, author, ISBN, summary, series, unambiguous year/page count. No invented records, inferred subjects, guessed formats or inferred work/edition grouping. Only an explicit local bibliographic item-type map supplies format.
-- Subjects are absent from these JSON responses. Genre filters and similarity have limited coverage until a MARC or indexed-search integration is added. Missing metadata is not an invitation to infer it with a model.
+- Subjects and genres come from MARC21 650/651/655 headings, with explicit canonical aliases for verified mystery headings. Missing metadata is never inferred by a model.
 - Visibility: request `opac_suppressed=0` and independently reject responses without explicit unsuppressed evidence. Broader production OPAC policy is unimplemented.
 - Availability: request only `_status`, not patron-bearing checkout/hold/recall embeds. Available items must have only the known `available` status; restrictions, bundles, holds, transfers, damage and other known blockers prevent availability claims. Unknown statuses or missing evidence remain unknown.
 - Holdings counts require complete pagination for the record, consistent totals and unique item IDs. Fetch at most three pages of 100 items per record, with at most four records in flight. Incomplete or failed responses remain unknown, including a truncated response containing some available items. These are observations, not promises of borrowing or hold eligibility.
@@ -86,3 +86,16 @@ Verified through Shelf's actual provider and production API:
 The repeatable setup assets are in [sandbox/koha](../sandbox/koha/README.md). Generated credentials, container data and public image downloads remain outside Git. The consolidated setup generator was validated for pinned sources, private file permissions, rendered Compose configuration and shell syntax. The existing sandbox passed live checks after incremental environment repairs; a complete cold boot using the final combined recipe has **not** been independently rerun. Linux x86-64 was exercised; macOS/Windows Koha setup is unverified.
 
 This proves the initial Koha integration locally. It does not deploy Koha for Replit, verify the user's Replit production URL, establish production OPAC policies, enable subject-based discovery, or test CARL•X/live AI.
+
+
+## MARC21 discovery and sandbox branch configuration
+
+The adapter now requests `application/marc-in-json` for bounded candidate pages. The pinned Koha controller prefetches metadata for this representation; `metadata.metadata` filtering is therefore supported there (not on the plain JSON list). XML text matches retrieve candidates only: parsed MARC21 650/651/655 headings supply subject evidence. Authority IDs and vocabulary codes are ignored. The precise 655 heading “Detective and mystery stories” maps to the canonical `mystery` constraint while retaining the original heading. A title containing “mystery” alone does not establish genre.
+
+Records join to normal JSON details using Koha's internal MARC21 999$c ID, never external control field 001 or array order. The second read rechecks bibliographic suppression. Pages remain bounded to 20 candidates; both HTTP calls share the engine's stage deadline. This is a pinned MARC21 sandbox contract, not an assumption about UNIMARC or every Koha installation.
+
+Use the non-secret `NEXT_PUBLIC_SHELF_BRANCHES` JSON array of `{ "id": "CPL", "name": "Centerville" }` objects in ignored `.env.local` before building to configure both UI and engine branches. Match these IDs in server-only `KOHA_BRANCH_MAP`; rebuild when branch configuration changes. Local validation uses existing CPL/Centerville, FPL/Fairview, and MPL/Midway sample holdings, alongside ASH/RUST/PUR synthetic branches. It does not rename or transfer existing items.
+
+Try “I want a mystery to pick up tomorrow at Centerville”: record 123 has one currently available sample copy. Fairview has record 199 with one, and Midway has record 200 with two. Rust has no mystery copies in this sandbox. Future availability and reservations are not established by these current holdings. Genre coverage still depends on supplied catalog headings.
+
+For another catalog adapter (including Carl), keep returning the same provider-neutral `subjects` and branch holdings contracts. MARC parsing and Koha query conventions stay inside this adapter.
