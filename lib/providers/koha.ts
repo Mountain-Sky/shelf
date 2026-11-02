@@ -1,5 +1,6 @@
 import type {
   CatalogPage,
+  CatalogBranch,
   CatalogProvider,
   CatalogQuery,
   CatalogRecord,
@@ -11,6 +12,7 @@ import type {
 /** Read-only REST adapter for the pinned Koha sandbox; not a public-OPAC policy adapter. */
 export type KohaOptions = {
   baseUrl: string;
+  opacUrl?: string;
   clientId: string;
   clientSecret: string;
   /** Shelf branch ID -> verified Koha library ID. No inferred aliases. */
@@ -95,6 +97,8 @@ export class KohaProvider implements CatalogProvider {
     fields: ["keyword", "title", "author", "identifier", "subject", "browse"],
   };
   private readonly base: string;
+  private libraryMap: Record<string, string> = {};
+  private readonly opac?: string;
   private token?: { value: string; expires: number };
   private tokenRequest?: Promise<string>;
   constructor(private readonly options: KohaOptions) {
@@ -130,6 +134,52 @@ export class KohaProvider implements CatalogProvider {
     )
       throw Error("Invalid Koha format mapping.");
     this.base = url.href.replace(/\/$/, "");
+    if (options.opacUrl) {
+      const opac = new URL(options.opacUrl);
+      if (
+        (opac.protocol !== "https:" &&
+          !(opac.protocol === "http:" && opac.hostname === "127.0.0.1")) ||
+        opac.username ||
+        opac.password ||
+        opac.search ||
+        opac.hash ||
+        opac.pathname !== "/"
+      )
+        throw Error("Invalid Koha OPAC origin.");
+      this.opac = opac.origin;
+    }
+  }
+  async branches(signal: AbortSignal): Promise<CatalogBranch[]> {
+    const { data, total } = await this.get(
+      "/libraries?_per_page=100&_order_by=%2Blibrary_id",
+      signal,
+    );
+    if (
+      !Array.isArray(data) ||
+      !data.length ||
+      data.length > 30 ||
+      (total !== undefined && total !== data.length)
+    )
+      throw Error("Incomplete Koha library configuration.");
+    const seen = new Set<string>();
+    const result = data.map((raw) => {
+      if (
+        !object(raw) ||
+        typeof raw.library_id !== "string" ||
+        !/^[A-Za-z0-9_-]{1,10}$/.test(raw.library_id) ||
+        !string(raw.name) ||
+        seen.has(raw.library_id)
+      )
+        throw Error("Invalid Koha library.");
+      seen.add(raw.library_id);
+      const alias =
+        Object.entries(this.options.branchMap).find(
+          ([, code]) => code === raw.library_id,
+        )?.[0] ?? raw.library_id;
+      this.libraryMap[alias] = raw.library_id;
+      return { id: alias, name: string(raw.name)! };
+    });
+    return result;
   }
   private async accessToken(signal: AbortSignal): Promise<string> {
     if (this.token && this.token.expires > Date.now()) return this.token.value;
@@ -229,6 +279,9 @@ export class KohaProvider implements CatalogProvider {
         pages && Number(pages[1]) > 0 ? { pages: Number(pages[1]) } : undefined,
       subjects: [],
       summary: string(raw.abstract),
+      catalogUrl: this.opac
+        ? `${this.opac}/cgi-bin/koha/opac-detail.pl?biblionumber=${raw.biblio_id}`
+        : undefined,
       series: string(raw.series_title)
         ? { title: string(raw.series_title)! }
         : undefined,
@@ -299,7 +352,7 @@ export class KohaProvider implements CatalogProvider {
     const metadata = new Map(
       data.map((raw) => {
         const parsed = parseKohaMarc(raw);
-        return [parsed.id, parsed.subjects] as const;
+        return [parsed.id, parsed] as const;
       }),
     );
     if (metadata.size !== data.length)
@@ -327,7 +380,21 @@ export class KohaProvider implements CatalogProvider {
         if (!metadata.has(record.ref.id) || seen.has(record.ref.id))
           throw Error("Mismatched Koha MARC identity.");
         seen.add(record.ref.id);
-        record.subjects = metadata.get(record.ref.id)!;
+        const marc = metadata.get(record.ref.id)!;
+        record.subjects = marc.subjects;
+        record.summary ??= marc.summary;
+        record.language = marc.language;
+        record.extent ??= marc.pages ? { pages: marc.pages } : undefined;
+        if (marc.format) record.format = marc.format;
+        record.identifiers = [
+          ...record.identifiers,
+          ...marc.isbns
+            .filter((isbn) => !record.identifiers.some((i) => i.value === isbn))
+            .map((value) => ({ scheme: "ISBN", value })),
+        ];
+        for (const name of marc.contributors)
+          if (!record.contributors.some((c) => c.name === name))
+            record.contributors.push({ name, role: "contributor" });
         if (
           query.field !== "subject" ||
           record.subjects.some((s) => s.includes(query.text.toLowerCase()))
@@ -414,7 +481,7 @@ export class KohaProvider implements CatalogProvider {
           output[index] = branches.map((branch) => {
             const library = Object.hasOwn(this.options.branchMap, branch)
               ? this.options.branchMap[branch]
-              : undefined;
+              : this.libraryMap[branch];
             const statuses = items
               .filter((i) => i.holding_library_id === library)
               .map((i) => itemStatus(i._status));
@@ -448,15 +515,36 @@ export class KohaProvider implements CatalogProvider {
 export function parseKohaMarc(raw: unknown): {
   id: string;
   subjects: string[];
+  summary?: string;
+  language?: string;
+  pages?: number;
+  format?: Format;
+  isbns: string[];
+  contributors: string[];
 } {
   if (!object(raw) || !Array.isArray(raw.fields))
     throw Error("Invalid Koha MARC record.");
   let recordId: string | undefined;
   const subjects = new Set<string>();
+  const values: Record<string, string[]> = {};
+  let format: Format | undefined;
   for (const field of raw.fields) {
     if (!object(field)) throw Error("Invalid Koha MARC field.");
     for (const [tag, value] of Object.entries(field)) {
-      if (!["999", "650", "651", "655"].includes(tag)) continue;
+      if (
+        ![
+          "999",
+          "650",
+          "651",
+          "655",
+          "020",
+          "041",
+          "300",
+          "520",
+          "700",
+        ].includes(tag)
+      )
+        continue;
       if (!object(value) || !Array.isArray(value.subfields))
         throw Error("Invalid Koha MARC subfields.");
       const parts: string[] = [];
@@ -464,12 +552,13 @@ export function parseKohaMarc(raw: unknown): {
         if (!object(subfield)) throw Error("Invalid Koha MARC subfield.");
         for (const [code, text] of Object.entries(subfield)) {
           if (typeof text !== "string") throw Error("Invalid Koha MARC text.");
+          if (code === "a") (values[tag] ??= []).push(text.trim());
           if (tag === "999" && code === "c") {
             if (recordId || !/^[1-9]\d*$/.test(text))
               throw Error("Invalid Koha MARC identity.");
             recordId = text;
           } else if (
-            tag !== "999" &&
+            ["650", "651", "655"].includes(tag) &&
             ["a", "v", "x", "y", "z"].includes(code)
           ) {
             const normalized = text
@@ -496,5 +585,39 @@ export function parseKohaMarc(raw: unknown): {
     }
   }
   if (!recordId) throw Error("Missing Koha MARC identity (999$c).");
-  return { id: recordId, subjects: [...subjects] };
+  const aliases: Record<string, string> = {
+    "science fiction": "science fiction",
+    "science fiction stories": "science fiction",
+    "fantasy fiction": "fantasy",
+    "fantasy stories": "fantasy",
+    "romance fiction": "romance",
+    "love stories": "romance",
+    "horror fiction": "horror",
+    "horror tales": "horror",
+    "thrillers (fiction)": "thriller",
+    "suspense fiction": "thriller",
+    "humorous fiction": "humor",
+    nonfiction: "nonfiction",
+    "juvenile fiction": "children",
+    "juvenile literature": "children",
+  };
+  for (const heading of [...subjects])
+    if (aliases[heading]) subjects.add(aliases[heading]);
+  if ((values["655"] ?? []).some((v) => /^audiobooks[.]?$/i.test(v)))
+    format = "audiobook";
+  if ((values["655"] ?? []).some((v) => /^large type books[.]?$/i.test(v)))
+    format = "large-print";
+  const pages = values["300"]?.[0]?.match(
+    /^(?:[ivxlcdm]+,\s*)?(\d{1,5})\s*(?:p\.|pages)(?=\s|:|$)/i,
+  );
+  return {
+    id: recordId,
+    subjects: [...subjects],
+    summary: values["520"]?.join(" "),
+    language: values["041"]?.[0],
+    pages: pages && Number(pages[1]) > 0 ? Number(pages[1]) : undefined,
+    format,
+    isbns: (values["020"] ?? []).map((v) => v.split(/\s*\(/)[0].trim()),
+    contributors: values["700"] ?? [],
+  };
 }

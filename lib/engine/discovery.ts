@@ -1,6 +1,7 @@
 import type {
   Assessment,
   CatalogPage,
+  CatalogBranch,
   CatalogRecord,
   CatalogProvider,
   CatalogQuery,
@@ -21,6 +22,7 @@ import { budgets, bounded, parallelMap } from "./budgets";
 
 export type EngineDependencies = {
   catalog: CatalogProvider;
+  branches?: CatalogBranch[];
   intelligence?: Intelligence;
   /** Application-selected stage deadline; engine remains provider independent. */
   catalogTimeoutMs?: number;
@@ -46,7 +48,7 @@ export async function discover(
     stagesMs[name] = Math.round((now - last) * 100) / 100;
     last = now;
   };
-  const plan = planDiscovery(input);
+  const plan = planDiscovery(input, dependencies.branches);
   const notes: string[] = [];
   const unsupportedSubjects =
     !catalog.capabilities.fields.includes("subject") &&
@@ -361,6 +363,7 @@ export async function discover(
     catalog,
     plan,
     catalogTimeoutMs,
+    dependencies.branches,
   );
   notes.push(...availability.notes);
   mark("availabilityAndGrouping");

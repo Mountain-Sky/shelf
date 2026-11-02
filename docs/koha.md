@@ -24,7 +24,7 @@ The adapter calls only `POST /api/v1/oauth/token`, `GET /api/v1/biblios`, and `G
 - Visibility: request `opac_suppressed=0` and independently reject responses without explicit unsuppressed evidence. Broader production OPAC policy is unimplemented.
 - Availability: request only `_status`, not patron-bearing checkout/hold/recall embeds. Available items must have only the known `available` status; restrictions, bundles, holds, transfers, damage and other known blockers prevent availability claims. Unknown statuses or missing evidence remain unknown.
 - Holdings counts require complete pagination for the record, consistent totals and unique item IDs. Fetch at most three pages of 100 items per record, with at most four records in flight. Incomplete or failed responses remain unknown, including a truncated response containing some available items. These are observations, not promises of borrowing or hold eligibility.
-- No write/hold/checkout/patron API methods exist in the adapter. Synthetic test-item changes happen through separate sandbox administration, never through Shelf's discovery endpoint.
+- The catalog adapter remains read-only. A separate circulation adapter supports explicitly enabled synthetic sandbox patrons. Synthetic test-item changes happen through separate sandbox administration, never through Shelf's discovery endpoint.
 
 ## Server configuration
 
@@ -94,8 +94,25 @@ The adapter now requests `application/marc-in-json` for bounded candidate pages.
 
 Records join to normal JSON details using Koha's internal MARC21 999$c ID, never external control field 001 or array order. The second read rechecks bibliographic suppression. Pages remain bounded to 20 candidates; both HTTP calls share the engine's stage deadline. This is a pinned MARC21 sandbox contract, not an assumption about UNIMARC or every Koha installation.
 
-Use the non-secret `NEXT_PUBLIC_SHELF_BRANCHES` JSON array of `{ "id": "CPL", "name": "Centerville" }` objects in ignored `.env.local` before building to configure both UI and engine branches. Match these IDs in server-only `KOHA_BRANCH_MAP`; rebuild when branch configuration changes. Local validation uses existing CPL/Centerville, FPL/Fairview, and MPL/Midway sample holdings, alongside ASH/RUST/PUR synthetic branches. It does not rename or transfer existing items.
+Use the non-secret `NEXT_PUBLIC_SHELF_BRANCHES` JSON array of `{ "id": "CPL", "name": "Centerville" }` objects in ignored `.env.local` before building to override branch display labels at build time. Koha libraries are discovered at runtime for both UI and engine. Match any aliases in server-only `KOHA_BRANCH_MAP`; rebuild when display overrides change. Local validation uses existing CPL/Centerville, FPL/Fairview, and MPL/Midway sample holdings, alongside ASH/RUST/PUR synthetic branches. It does not rename or transfer existing items.
 
 Try “I want a mystery to pick up tomorrow at Centerville”: record 123 has one currently available sample copy. Fairview has record 199 with one, and Midway has record 200 with two. Rust has no mystery copies in this sandbox. Future availability and reservations are not established by these current holdings. Genre coverage still depends on supplied catalog headings.
 
 For another catalog adapter (including Carl), keep returning the same provider-neutral `subjects` and branch holdings contracts. MARC parsing and Koha query conventions stay inside this adapter.
+
+
+## Local patron accounts and circulation
+
+The UI and account route call an application service through the provider-neutral CirculationProvider contract. Koha authentication, holds and renewal requests live in lib/providers/koha-circulation.ts; a future CARL adapter must implement and validate the same contract. CARL connectivity has not been tested.
+
+Enable only in the isolated local sandbox: KOHA_SANDBOX_ONLY=1, KOHA_CIRC_CLIENT_ID, KOHA_CIRC_CLIENT_SECRET, and comma-separated KOHA_TEST_PATRON_IDS. Keep these server-only and out of Git. The original catalogue reader is unchanged. A separate service principal has catalogue/hold management and the named circulation/password-validation permissions.
+
+sandbox/koha/seed-circulation.pl creates a dedicated SHELF category, two synthetic readers, two labeled fixture records/items, category-specific rules, and one checked-out fixture. It takes a JSON password on stdin and outputs sensitive JSON; capture it directly to a mode-0600 file outside Git. Do not rerun on an existing setup: rerunning resets the synthetic passwords and issues another service key. It uses a transaction and refuses collisions with unrelated patrons.
+
+Sign in through **Library account**, view loans and holds, renew a loan, or use **Request hold** on a book card and explicitly choose a pickup branch. Koha decides eligibility; Shelf does not override circulation rules. A requested hold is not a ready-for-pickup promise. Reading lists remain browser-local.
+
+Sessions use random opaque HttpOnly SameSite=Strict cookies, expire after 30 minutes, and are stored only in server memory (a restart signs everyone out). Account writes require same-origin JSON. Resource ownership is verified before cancel/renew; only allowlisted synthetic patrons can authenticate. Passwords are never persisted by Shelf. This is a single-process local sandbox, not production identity management.
+
+Live browser tests accept SHELF_KOHA_ACCOUNT_FIXTURE pointing to the private fixture JSON. The explicit mutating smoke command is npx tsx scripts/koha-circulation-smoke.ts with that same variable. It increments the dedicated fixture renewal count, places and cancels a fixture hold, verifies readback, and checks that the second reader cannot act on the first reader account. The fixture permits five renewals; repeated runs can legitimately hit Koha limits.
+
+Koha branches are discovered from the live libraries endpoint. Configured branch labels override display names; other branches use Koha names and codes automatically. MARC enrichment includes subjects, summaries, language, page count, identifiers and additional contributors when present. Missing metadata remains unknown. KOHA_OPAC_URL optionally enables real catalog links; use an HTTPS origin or loopback HTTP origin. Metadata and holdings remain source-backed.

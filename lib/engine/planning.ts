@@ -1,4 +1,10 @@
-import type { DiscoveryInput, Plan, Preferences, CatalogQuery } from "../types";
+import type {
+  DiscoveryInput,
+  Plan,
+  Preferences,
+  CatalogQuery,
+  CatalogBranch,
+} from "../types";
 import { interpret } from "./intent";
 import { branches } from "../config/branches";
 import { budgets } from "./budgets";
@@ -30,7 +36,10 @@ export function termsFor(text: string): string[] {
     ),
   ].slice(0, budgets.terms);
 }
-export function planDiscovery(input: DiscoveryInput): Plan {
+export function planDiscovery(
+  input: DiscoveryInput,
+  catalogBranches: CatalogBranch[] = branches,
+): Plan {
   const { state } = input;
   const message = input.message.trim();
   const ordinalReferences = [
@@ -84,9 +93,12 @@ export function planDiscovery(input: DiscoveryInput): Plan {
     delete p.maxPages;
   }
   if (input.branch !== undefined) p.branch = input.branch || undefined;
-  for (const branch of branches) {
+  for (const branch of catalogBranches) {
     if (
-      new RegExp(`\\b${branch.name}\\b|\\b${branch.id}\\b`, "i").test(message)
+      new RegExp(
+        `\\b${branch.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b|\\b${branch.id}\\b`,
+        "i",
+      ).test(message)
     )
       p.branch = branch.id;
   }
@@ -102,16 +114,22 @@ export function planDiscovery(input: DiscoveryInput): Plan {
   const pages = /\bunder\s+(\d{1,5})\s+pages\b/i.exec(message);
   if (pages) p.maxPages = Number(pages[1]) - 1;
   if (/\b(any length|no page limit)\b/i.test(message)) delete p.maxPages;
-  if (
+  const descriptiveGenre =
+    /\b(mysteries|mystery|science fiction|fantasy|romance|horror|thrillers?|nonfiction)\b/i.exec(
+      message,
+    );
+  const genreRequest =
     !seedTitle &&
     !refers &&
-    interpret(message) !== "known_item" &&
-    /\bmyster(?:y|ies)\b/i.test(message)
-  )
-    p.requiredSubjects = [
-      ...p.requiredSubjects.filter((s) => s !== "mystery"),
-      "mystery",
-    ];
+    descriptiveGenre &&
+    (interpret(message) !== "known_item" ||
+      /^find\s+(?:me\s+)?(?:a|an|some)\s/i.test(message));
+  if (genreRequest) {
+    const raw = descriptiveGenre[1].toLowerCase();
+    const subject =
+      raw === "mysteries" ? "mystery" : raw === "thrillers" ? "thriller" : raw;
+    p.requiredSubjects = [...new Set([...p.requiredSubjects, subject])];
+  }
   if (
     /\b(kids|children|child|nine.year.old|9.year.old|12.year.old)\b/i.test(
       message,
@@ -194,7 +212,7 @@ export function planDiscovery(input: DiscoveryInput): Plan {
   if (refinement && !refers && input.action !== "branch")
     terms = [...terms, ...termsFor(message)];
   const branchWords = new Set(
-    branches.flatMap((b) => [
+    catalogBranches.flatMap((b) => [
       b.id.toLowerCase(),
       ...b.name.toLowerCase().split(/\s+/),
     ]),
@@ -207,7 +225,9 @@ export function planDiscovery(input: DiscoveryInput): Plan {
   const intent =
     refers || seedTitle
       ? "recommendation"
-      : interpret(input.action === "branch" ? query : message);
+      : genreRequest
+        ? "exploration"
+        : interpret(input.action === "branch" ? query : message);
   const plan: Plan = {
     intent,
     browse,
@@ -267,7 +287,28 @@ export function queriesFor(plan: Plan): CatalogQuery[] {
     );
   if (/^books? by |^author:/i.test(plan.query))
     add("author", plan.query.replace(/^books? by |^author:\s*/i, ""));
-  if (plan.expandedQueries.length)
+  if (plan.excludeResultId || plan.seedTitle) {
+    const meaningful = plan.expandedQueries.filter(
+      (s) =>
+        !["fiction", "nonfiction", "children"].includes(s) &&
+        !s.includes(" — "),
+    );
+    const preferred = meaningful.filter((s) =>
+      [
+        "mystery",
+        "fantasy",
+        "science fiction",
+        "romance",
+        "horror",
+        "thriller",
+      ].includes(s),
+    );
+    for (const subject of [...new Set([...preferred, ...meaningful])].slice(
+      0,
+      budgets.queries,
+    ))
+      add("subject", subject);
+  } else if (plan.expandedQueries.length)
     add("keyword", plan.expandedQueries.join(" "));
   for (const subject of plan.preferences.requiredSubjects)
     add("subject", subject);

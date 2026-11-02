@@ -24,6 +24,7 @@ import type { DiscoveryTrace, Preferences, ResultBook } from "../lib/types";
 import { branches } from "../lib/config/branches";
 import { BookCard, formatName } from "./components/BookCard";
 import { RotatingHeadline } from "./components/RotatingHeadline";
+import { LibraryAccount } from "./components/LibraryAccount";
 import { Comparison } from "./components/Comparison";
 import {
   MAX_SAVED,
@@ -73,6 +74,10 @@ const starters = [
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [branch, setBranch] = useState("");
+  const [catalogBranches, setCatalogBranches] = useState(branches);
+  const [accountEnabled, setAccountEnabled] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [holdTarget, setHoldTarget] = useState<{ id: string; title: string }>();
   const [books, setBooks] = useState<ResultBook[]>([]);
   const [saved, setSaved] = useState<SavedBook[]>([]);
   const [savedReady, setSavedReady] = useState(false);
@@ -142,6 +147,8 @@ export default function Home() {
       failedRequest.current = undefined;
       session.current = data.session;
       setBranch(data.branch ?? "");
+      if (data.branches) setCatalogBranches(data.branches);
+      setAccountEnabled(Boolean(data.circulationAvailable));
       setPreferences(data.preferences ?? emptyPreferences);
       setNotices(data.notices ?? []);
       setActions(data.suggestedActions ?? []);
@@ -328,6 +335,16 @@ export default function Home() {
               <Bookmark size={16} /> My shelf{" "}
               <span className="nav-count">{saved.length}</span>
             </button>
+            {accountEnabled && (
+              <button
+                onClick={() => {
+                  setHoldTarget(undefined);
+                  setAccountOpen(true);
+                }}
+              >
+                Library account
+              </button>
+            )}
           </nav>
           <div className="demo-badge">
             <span /> Working demo{" "}
@@ -523,7 +540,7 @@ export default function Home() {
                       ? "All sandbox branches"
                       : "All configured branches"}
                 </option>
-                {branches.map((b) => (
+                {catalogBranches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
                   </option>
@@ -751,6 +768,27 @@ export default function Home() {
                   <BookCard
                     key={book.id}
                     book={book}
+                    catalogBranches={catalogBranches}
+                    onHold={
+                      accountEnabled
+                        ? () => {
+                            const record = book.editions.find(
+                              (e) =>
+                                JSON.stringify([
+                                  e.record.ref.provider,
+                                  e.record.ref.id,
+                                ]) === book.selectedRecordId,
+                            )?.record;
+                            if (record) {
+                              setHoldTarget({
+                                id: record.ref.id,
+                                title: book.title,
+                              });
+                              setAccountOpen(true);
+                            }
+                          }
+                        : undefined
+                    }
                     index={index}
                     saved={saved.some((b) => b.id === book.id)}
                     compared={compared.some((b) => b.id === book.id)}
@@ -908,7 +946,10 @@ export default function Home() {
                 : source === "koha"
                   ? "Koha sandbox catalog"
                   : `${source} catalog`}{" "}
-              · No patron accounts or live holds
+              ·{" "}
+              {accountEnabled
+                ? "Synthetic test accounts and real sandbox holds"
+                : "No patron accounts or live holds"}
             </span>
             <button
               aria-expanded={showLab}
@@ -969,7 +1010,14 @@ export default function Home() {
           </button>
         </div>
       )}
+      <LibraryAccount
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+        branches={catalogBranches}
+        target={holdTarget}
+      />
       <Comparison
+        catalogBranches={catalogBranches}
         books={compared}
         open={showCompare}
         onClose={() => setShowCompare(false)}

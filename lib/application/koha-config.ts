@@ -19,6 +19,7 @@ export function kohaFromEnvironment() {
     );
   return new KohaProvider({
     baseUrl: process.env.KOHA_API_URL || "",
+    opacUrl: process.env.KOHA_OPAC_URL,
     clientId: process.env.KOHA_CLIENT_ID || "",
     clientSecret: process.env.KOHA_CLIENT_SECRET || "",
     branchMap: mapping(process.env.KOHA_BRANCH_MAP),

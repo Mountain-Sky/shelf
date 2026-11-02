@@ -1,5 +1,6 @@
 import type {
   CatalogProvider,
+  CatalogBranch,
   Holding,
   Plan,
   Ranked,
@@ -14,6 +15,7 @@ export async function resolveAvailability(
   provider: CatalogProvider,
   plan: Plan,
   catalogTimeoutMs: number = budgets.catalogTimeoutMs,
+  catalogBranches: CatalogBranch[] = branches,
 ): Promise<{
   books: ResultBook[];
   holdings: Holding[];
@@ -27,7 +29,7 @@ export async function resolveAvailability(
   const selected = ranked.slice(0, budgets.holdingsRecords);
   const branchIds = plan.preferences.branch
     ? [plan.preferences.branch]
-    : branches.map((b) => b.id);
+    : catalogBranches.map((b) => b.id);
   const notes: string[] = [];
   if (ranked.length > budgets.holdingsRecords)
     notes.push(

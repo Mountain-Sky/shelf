@@ -3,6 +3,7 @@ import {
   search,
   validRequest,
 } from "../../../lib/application/discovery-service";
+import { AccountError } from "../../../lib/circulation";
 import { SessionError } from "../../../lib/application/sessions";
 export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
@@ -61,7 +62,12 @@ export async function POST(req: NextRequest) {
             ? error.message
             : "Discovery is unavailable. Please try again.",
       },
-      { status: error instanceof SessionError ? error.status : 503 },
+      {
+        status:
+          error instanceof SessionError || error instanceof AccountError
+            ? error.status
+            : 503,
+      },
     );
   }
 }

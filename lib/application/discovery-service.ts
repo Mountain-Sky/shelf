@@ -5,8 +5,9 @@ import { CarlXProvider } from "../providers/carlx";
 import { kohaFromEnvironment } from "./koha-config";
 import { OpenAIIntelligence } from "../ai/openai";
 import { SessionStore } from "./sessions";
-import type { DiscoveryInput, DiscoveryTrace } from "../types";
-import { isBranch } from "../config/branches";
+import type { DiscoveryInput, DiscoveryTrace, CatalogProvider } from "../types";
+import { AccountError } from "../circulation";
+import { branches as configuredBranches } from "../config/branches";
 // Shared through development reloads; process-local and deliberately ephemeral.
 const globalStore = globalThis as typeof globalThis & {
   shelfSessions?: SessionStore;
@@ -30,7 +31,8 @@ export function validRequest(value: unknown): value is SearchRequest {
     return false;
   if (
     v.branch !== undefined &&
-    (typeof v.branch !== "string" || !isBranch(v.branch))
+    (typeof v.branch !== "string" ||
+      !(v.branch === "" || /^[A-Za-z0-9_-]{1,10}$/.test(v.branch)))
   )
     return false;
   if (
@@ -63,11 +65,11 @@ export function validRequest(value: unknown): value is SearchRequest {
   }
   return true;
 }
-function dependencies(ai: boolean) {
+async function dependencies(ai: boolean) {
   const mode = process.env.CATALOG_MODE ?? "mock";
   if (!["mock", "http-demo", "carlx", "koha"].includes(mode))
     throw Error("Unsupported catalog configuration");
-  return {
+  const dependencies = {
     // Local Koha can exceed fixture timings during cold starts; keep the deadline bounded.
     catalogTimeoutMs: mode === "koha" ? 6000 : undefined,
     catalog:
@@ -88,6 +90,15 @@ function dependencies(ai: boolean) {
           )
         : undefined,
   };
+  const catalog: CatalogProvider = dependencies.catalog;
+  const discovered = catalog.branches
+    ? await catalog.branches(AbortSignal.timeout(6000))
+    : configuredBranches;
+  const branches = discovered.map((b) => ({
+    ...b,
+    name: configuredBranches.find((c) => c.id === b.id)?.name ?? b.name,
+  }));
+  return { ...dependencies, branches };
 }
 function diagnosticTrace(trace: DiscoveryTrace) {
   // Trace is opt-in local diagnostics, not a public administrator endpoint.
@@ -112,14 +123,21 @@ export async function search(request: SearchRequest) {
     request.session?.revision,
   );
   try {
+    const deps = await dependencies(true);
+    if (request.branch && !deps.branches.some((b) => b.id === request.branch))
+      throw new AccountError("Unknown catalog branch", 400);
     const result = await discover(
       { ...request, state: transaction.state },
-      dependencies(true),
+      deps,
     );
     const session = transaction.commit(result.state);
     const { state: _, trace, ...response } = result;
     return {
       ...response,
+      branches: deps.branches,
+      circulationAvailable:
+        process.env.CATALOG_MODE === "koha" &&
+        Boolean(process.env.KOHA_CIRC_CLIENT_ID),
       notices:
         result.source === "koha"
           ? [
@@ -142,6 +160,9 @@ export async function search(request: SearchRequest) {
 }
 export async function conventionalSearch(message: string, branch: string) {
   const input: DiscoveryInput = { message, branch };
-  const { books, source, notices } = await discover(input, dependencies(false));
-  return { books, source, notices };
+  const deps = await dependencies(false);
+  if (branch && !deps.branches.some((b) => b.id === branch))
+    throw new AccountError("Unknown catalog branch", 400);
+  const { books, source, notices } = await discover(input, deps);
+  return { books, source, notices, branches: deps.branches };
 }

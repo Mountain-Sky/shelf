@@ -2,7 +2,7 @@
 
 A working visual library discovery demo for the Loudoun County Public Library prototype. Explore a bookshelf, search or refine in natural language, compare editions, and keep a browser-local reading list. The full demo reads 32 works / 44 edition records through an independent local catalog service with persistent synthetic holdings.
 
-**In the default catalog mode, all records are demo fixtures and all branch counts are synthetic. No live LCPL catalog, CARL•X connection, patron accounts or holds are implemented.** Book covers are requested from Open Library using a checksum-valid ISBN supplied by the selected catalog edition. Missing or failed artwork stays a labeled typographic placeholder; covers are enrichment, not evidence about holdings.
+**In the default catalog mode, all records are demo fixtures and all branch counts are synthetic. No live LCPL catalog or CARL•X connection is implemented. Patron accounts and holds are available only in the opt-in local Koha sandbox.** Book covers are requested from Open Library using a checksum-valid ISBN supplied by the selected catalog edition. Missing or failed artwork stays a labeled typographic placeholder; covers are enrichment, not evidence about holdings.
 
 ## Replit deployment
 
@@ -48,7 +48,7 @@ The committed npm lockfile makes installs reproducible. `npm audit` checks known
 
 ## Optional Koha sandbox
 
-An opt-in, read-only Koha REST provider is available without changing the Next.js architecture. See [Koha sandbox provider](docs/koha.md) for server-only OAuth configuration, source contracts, MARC21 subject/genre coverage, and live validation. The default demo still uses fixtures; enabling this adapter does not provision or host Koha.
+An opt-in Koha REST catalog provider with separate sandbox circulation support is available without changing the Next.js architecture. See [Koha sandbox provider](docs/koha.md) for server-only OAuth configuration, source contracts, MARC21 subject/genre coverage, and live validation. The default demo still uses fixtures; enabling this adapter does not provision or host Koha.
 
 ## Optional AI
 
@@ -69,7 +69,7 @@ Set `SHELF_INSPECTOR=1` locally to enable diagnostic responses; restart the serv
 - [Architecture and audit](docs/architecture.md)
 - [CARL•X integration requirements](docs/carlx.md)
 
-This is a local prototype. Public deployment, patron accounts and live holds are out of scope.
+This is a local prototype. Public deployment is out of scope. Local Koha supports synthetic patron sign-in, loans, holds and renewals; CARL remains a future adapter.
 
 ## Local Koha interface checks
 

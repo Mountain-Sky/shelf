@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { BookCover } from "./BookCover";
 import { coverIsbn } from "../ui/covers";
-import type { ResultBook } from "../../lib/types";
+import type { ResultBook, CatalogBranch } from "../../lib/types";
 import { branches } from "../../lib/config/branches";
 export const formatName = (format: string) =>
   ({
@@ -21,8 +21,8 @@ export const formatName = (format: string) =>
     ebook: "Ebook",
     unknown: "Format unknown",
   })[format] ?? format;
-export const branchName = (code: string) =>
-  branches.find((b) => b.id === code)?.name ?? code;
+export const branchName = (code: string, list: CatalogBranch[] = branches) =>
+  list.find((b) => b.id === code)?.name ?? code;
 export function selectedEdition(book: ResultBook) {
   return (
     book.editions.find(
@@ -33,6 +33,7 @@ export function selectedEdition(book: ResultBook) {
   );
 }
 export function BookCard({
+  catalogBranches = branches,
   book,
   index,
   saved,
@@ -42,7 +43,9 @@ export function BookCard({
   onSave,
   onCompare,
   onSimilar,
+  onHold,
 }: {
+  catalogBranches?: CatalogBranch[];
   book: ResultBook;
   index: number;
   saved: boolean;
@@ -52,6 +55,7 @@ export function BookCard({
   onSave: () => void;
   onCompare: () => void;
   onSimilar: () => void;
+  onHold?: () => void;
 }) {
   const positive = book.availability.filter((h) => h.status === "available");
   const unknown = book.availability.some((h) => h.status === "unknown");
@@ -105,7 +109,7 @@ export function BookCard({
         >
           <span className="availability-dot" />
           {positive.length
-            ? `${fixture ? "Demo copies" : "Available copies reported"} at ${positive.length === 1 ? branchName(positive[0].branch) : `${positive.length} branches`}`
+            ? `${fixture ? "Demo copies" : "Available copies reported"} at ${positive.length === 1 ? branchName(positive[0].branch, catalogBranches) : `${positive.length} branches`}`
             : unknown
               ? "Some availability is unknown"
               : fixture
@@ -115,7 +119,7 @@ export function BookCard({
         <ul className="branch-holdings" aria-label="Branch availability">
           {book.availability.map((a) => (
             <li key={a.branch} className={`holding-${a.status}`}>
-              <strong>{branchName(a.branch)}</strong>
+              <strong>{branchName(a.branch, catalogBranches)}</strong>
               <span>
                 {a.status === "unknown"
                   ? "Availability unknown"
@@ -159,7 +163,10 @@ export function BookCard({
               </span>
               <small>
                 {e.availability
-                  .map((h) => `${branchName(h.branch)}: ${h.status}`)
+                  .map(
+                    (h) =>
+                      `${branchName(h.branch, catalogBranches)}: ${h.status}`,
+                  )
                   .join(" · ")}
               </small>
             </div>
@@ -174,6 +181,15 @@ export function BookCard({
             Refresh your search for the latest observation.
           </p>
         </details>
+        {onHold && (
+          <button
+            className="secondary-button hold-button"
+            disabled={busy}
+            onClick={onHold}
+          >
+            Request hold
+          </button>
+        )}
         <div className="book-actions">
           <button
             className="similar-button"

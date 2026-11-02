@@ -1,15 +1,17 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { X, Bookmark, GitCompareArrows } from "lucide-react";
-import type { ResultBook } from "../../lib/types";
+import type { ResultBook, CatalogBranch } from "../../lib/types";
 import { formatName, selectedEdition, branchName } from "./BookCard";
 export function Comparison({
+  catalogBranches,
   books,
   open,
   onClose,
   onRemove,
   onSave,
 }: {
+  catalogBranches?: CatalogBranch[];
   books: ResultBook[];
   open: boolean;
   onClose: () => void;
@@ -129,7 +131,7 @@ export function Comparison({
                   <td key={b.id}>
                     {b.availability.map((a) => (
                       <p key={a.branch}>
-                        {branchName(a.branch)}:{" "}
+                        {branchName(a.branch, catalogBranches)}:{" "}
                         {a.status === "unknown"
                           ? "unknown"
                           : `${a.copies} ${selectedEdition(b)?.record.provenance.kind === "fixture" ? "demo copies" : "available copies reported"}`}

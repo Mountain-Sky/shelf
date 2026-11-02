@@ -3019,3 +3019,89 @@ footer > span {
     display: none;
   }
 }
+.library-account {
+  width: min(680px, calc(100% - 32px));
+  max-height: 90vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--accent);
+  padding: 26px;
+  border-radius: 5px;
+  color: var(--ink);
+}
+.library-account::backdrop {
+  background: #142a36aa;
+}
+.library-account h2,
+.library-account h3 {
+  font-family: var(--sans);
+}
+.library-account form,
+.library-account label {
+  display: grid;
+  gap: 8px;
+}
+.library-account form {
+  gap: 16px;
+}
+.library-account input,
+.library-account select {
+  padding: 10px;
+  border: 1px solid #829ba5;
+  border-radius: 3px;
+  width: 100%;
+}
+.library-account ul {
+  padding: 0;
+  list-style: none;
+}
+.library-account li {
+  display: grid;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+.library-account button {
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid #b7cbd2;
+  border-radius: 3px;
+}
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.account-notice {
+  padding: 12px;
+  background: #edf4f6;
+  border-left: 3px solid var(--green);
+}
+.hold-request {
+  background: #f2f6f7;
+  padding: 18px;
+  margin: 20px 0;
+}
+.hold-button {
+  width: 100%;
+  margin-top: 8px;
+}
+@media (max-width: 760px) {
+  .site-header {
+    height: auto;
+    min-height: 94px;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .site-header nav {
+    flex-wrap: wrap;
+    height: auto;
+    gap: 14px;
+  }
+  .site-header nav button {
+    min-height: 38px;
+  }
+}

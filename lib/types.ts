@@ -49,7 +49,9 @@ export type CatalogQuery = {
   cursor?: string;
 };
 export type CatalogPage = { records: CatalogRecord[]; nextCursor?: string };
+export type CatalogBranch = { id: string; name: string };
 export interface CatalogProvider {
+  branches?(signal: AbortSignal): Promise<CatalogBranch[]>;
   readonly id: string;
   readonly kind: "fixture" | "catalog";
   readonly capabilities: { fields: CatalogQuery["field"][] };
