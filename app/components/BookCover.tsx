@@ -12,6 +12,7 @@ export function BookCover({
   author: string;
   isbn?: string;
 }) {
+  const coversEnabled = process.env.NEXT_PUBLIC_SHELF_COVERS === "openlibrary";
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const palette = [...title].reduce((n, c) => n + c.charCodeAt(0), 0) % 7;
@@ -25,7 +26,7 @@ export function BookCover({
           <div className="coverTitle">{title}</div>
           <div className="coverAuthor">{author}</div>
         </div>
-        {isbn && !failed && (
+        {coversEnabled && isbn && !failed && (
           <img
             src={coverUrl(isbn)}
             alt={`Cover matched by ISBN for ${title}`}
@@ -59,7 +60,7 @@ export function BookCover({
           >
             Cover via Open Library · ISBN match
           </a>
-        ) : isbn && !failed ? (
+        ) : coversEnabled && isbn && !failed ? (
           "Cover loading · placeholder shown"
         ) : (
           "Cover unavailable · placeholder"

@@ -44,7 +44,6 @@ export function BookCard({
   onSave,
   onCompare,
   onSimilar,
-  onHold,
 }: {
   catalogBranches?: CatalogBranch[];
   book: ResultBook;
@@ -56,7 +55,6 @@ export function BookCard({
   onSave: () => void;
   onCompare: () => void;
   onSimilar: () => void;
-  onHold?: () => void;
 }) {
   const [locationsExpanded, setLocationsExpanded] = useState(false);
   const positive = book.availability.filter((h) => h.status === "available");
@@ -218,15 +216,7 @@ export function BookCard({
             Refresh your search for the latest observation.
           </p>
         </details>
-        {onHold && (
-          <button
-            className="secondary-button hold-button"
-            disabled={busy}
-            onClick={onHold}
-          >
-            Request hold
-          </button>
-        )}
+
         <div className="book-actions">
           <button
             className="similar-button"

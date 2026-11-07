@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { conventionalSearch } from "../../../../lib/application/discovery-service";
-import { AccountError } from "../../../../lib/circulation";
+import {
+  RequestError,
+  CatalogConfigurationError,
+} from "../../../../lib/application/errors";
 export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const query = (req.nextUrl.searchParams.get("q") ?? "").trim();
@@ -20,8 +23,13 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: "Catalog service unavailable" },
-      { status: error instanceof AccountError ? error.status : 503 },
+      {
+        error:
+          error instanceof CatalogConfigurationError
+            ? error.message
+            : "Catalog service unavailable",
+      },
+      { status: error instanceof RequestError ? error.status : 503 },
     );
   }
 }

@@ -4,7 +4,7 @@
 
 All Shelf interfaces share the Loudoun County Public Library-inspired identity established for the original experience. This is Shelf's adopted design system, not a claim that these are official LCPL brand specifications.
 
-The original `/` and experimental `/explore` are two ways into the same product. They may differ in layout, navigation, information density, and how the collection responds. They must not develop separate visual identities. Requests for a cleaner or more modern interface mean improve composition and interaction within this system, unless the user explicitly requests a rebrand.
+The original `/classic` and experimental `/explore` are two ways into the same product. They may differ in layout, navigation, information density, and how the collection responds. They must not develop separate visual identities. Requests for a cleaner or more modern interface mean improve composition and interaction within this system, unless the user explicitly requests a rebrand.
 
 ## Source of truth
 
@@ -49,7 +49,7 @@ Keep UI, application service, Discovery Engine, intelligence, and catalog adapte
 - Check the original and experimental routes; keep changes scoped.
 - Verify shared tokens and fonts, including nested details and dialogs.
 - Inspect the real rendered screen and narrow layouts; verify navigation and keyboard focus.
-- Test behavior affected by the change against the existing Koha sandbox when relevant.
-- Preserve the database and unrelated services. Commit reviewable changes; do not merge or deploy without instruction.
+- Test behavior affected by the change against the configured provider; use fixtures until CARL•X is verified.
+- Preserve local configuration and unrelated services. Commit reviewable changes; do not merge or deploy without instruction.
 
 Do not add snapshot tests that merely repeat color values. Use visual inspection for cosmetic edits and behavior tests for meaningful interaction changes.

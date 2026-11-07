@@ -59,7 +59,7 @@ test("UI and API routes cannot bypass the application/engine boundary", () => {
         root,
         resolve(dirname(file), item.name),
       ).replaceAll("\\", "/");
-      if (file.includes("/api/"))
+      if (file.replaceAll("\\", "/").includes("/api/"))
         assert.ok(
           !/lib\/(providers|ai|engine)\//.test(target),
           `${file} bypasses application via ${item.name}`,

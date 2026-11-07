@@ -315,6 +315,7 @@
   text-align: left;
 }
 .footer {
+  background: var(--surface);
   border-top: 1px solid var(--line);
   padding-top: 20px;
   font-size: 11px;

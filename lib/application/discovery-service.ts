@@ -1,12 +1,9 @@
 import { discover } from "../engine/discovery";
 import { mockProvider } from "../providers/mock";
-import { HttpDemoProvider } from "../providers/http-demo";
-import { CarlXProvider } from "../providers/carlx";
-import { kohaFromEnvironment } from "./koha-config";
 import { OpenAIIntelligence } from "../ai/openai";
 import { SessionStore } from "./sessions";
 import type { DiscoveryInput, DiscoveryTrace, CatalogProvider } from "../types";
-import { AccountError } from "../circulation";
+import { RequestError, CatalogConfigurationError } from "./errors";
 import { branches as configuredBranches } from "../config/branches";
 // Shared through development reloads; process-local and deliberately ephemeral.
 const globalStore = globalThis as typeof globalThis & {
@@ -67,21 +64,16 @@ export function validRequest(value: unknown): value is SearchRequest {
 }
 async function dependencies(ai: boolean) {
   const mode = process.env.CATALOG_MODE ?? "mock";
-  if (!["mock", "http-demo", "carlx", "koha"].includes(mode))
-    throw Error("Unsupported catalog configuration");
+  if (mode === "carlx")
+    throw new CatalogConfigurationError(
+      "CARL•X is not connected yet. Implement and verify the SOAP adapter using docs/carlx.md. Use CATALOG_MODE=mock for the offline prototype.",
+    );
+  if (mode !== "mock")
+    throw new CatalogConfigurationError(
+      "Unsupported catalog mode. This package supports mock mode; CARL•X integration is pending.",
+    );
   const dependencies = {
-    // Local Koha can exceed fixture timings during cold starts; keep the deadline bounded.
-    catalogTimeoutMs: mode === "koha" ? 6000 : undefined,
-    catalog:
-      mode === "koha"
-        ? kohaFromEnvironment()
-        : mode === "carlx"
-          ? new CarlXProvider()
-          : mode === "http-demo"
-            ? new HttpDemoProvider(
-                process.env.DEMO_CATALOG_URL || "http://127.0.0.1:4310",
-              )
-            : mockProvider,
+    catalog: mockProvider,
     intelligence:
       ai && process.env.OPENAI_API_KEY
         ? new OpenAIIntelligence(
@@ -125,7 +117,7 @@ export async function search(request: SearchRequest) {
   try {
     const deps = await dependencies(true);
     if (request.branch && !deps.branches.some((b) => b.id === request.branch))
-      throw new AccountError("Unknown catalog branch", 400);
+      throw new RequestError("Unknown catalog branch", 400);
     const result = await discover(
       { ...request, state: transaction.state },
       deps,
@@ -135,16 +127,7 @@ export async function search(request: SearchRequest) {
     return {
       ...response,
       branches: deps.branches,
-      circulationAvailable:
-        process.env.CATALOG_MODE === "koha" &&
-        Boolean(process.env.KOHA_CIRC_CLIENT_ID),
-      notices:
-        result.source === "koha"
-          ? [
-              ...result.notices,
-              "Koha sandbox subjects come from MARC21 catalog headings. Genre coverage depends on cataloging; holdings are current sandbox observations, not reservations.",
-            ]
-          : result.notices,
+      notices: result.notices,
       session,
       branch: result.state.preferences.branch ?? "",
       preferences: result.state.preferences,
@@ -162,7 +145,7 @@ export async function conventionalSearch(message: string, branch: string) {
   const input: DiscoveryInput = { message, branch };
   const deps = await dependencies(false);
   if (branch && !deps.branches.some((b) => b.id === branch))
-    throw new AccountError("Unknown catalog branch", 400);
+    throw new RequestError("Unknown catalog branch", 400);
   const { books, source, notices } = await discover(input, deps);
   return { books, source, notices, branches: deps.branches };
 }

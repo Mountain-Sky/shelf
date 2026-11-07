@@ -3,7 +3,10 @@ import {
   search,
   validRequest,
 } from "../../../lib/application/discovery-service";
-import { AccountError } from "../../../lib/circulation";
+import {
+  RequestError,
+  CatalogConfigurationError,
+} from "../../../lib/application/errors";
 import { SessionError } from "../../../lib/application/sessions";
 export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
@@ -58,13 +61,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          error instanceof SessionError
+          error instanceof SessionError ||
+          error instanceof CatalogConfigurationError
             ? error.message
             : "Discovery is unavailable. Please try again.",
       },
       {
         status:
-          error instanceof SessionError || error instanceof AccountError
+          error instanceof SessionError || error instanceof RequestError
             ? error.status
             : 503,
       },

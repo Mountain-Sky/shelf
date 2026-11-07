@@ -1,13 +1,7 @@
-# Shelf design requirements
+# Shelf work prototype
 
-Before any UI or styling change, read [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). All routes and new experiments must use the shared Loudoun-inspired Shelf identity and existing tokens. An alternate layout or a request to modernize controls is not permission to change the palette or type family. Preserve both `/` and `/explore` unless the user explicitly requests otherwise.
+Read README.md, DESIGN_SYSTEM.md, ARCHITECTURE.md and docs/WORK-HANDOFF.md before making changes. This is a curated Windows export, not the Koha development environment.
 
-<!-- BEGIN:nextjs-agent-rules -->
+Preserve the Visual bookshelf at `/explore` as the default, with the secondary original view at `/classic`. Preserve the shared teal/rust palette, Arial typography and composer. Keep the UI, application, engine and catalog adapter separate. Secrets remain server-side. Do not invent SOAP operations, bibliographic records or availability. Do not reconnect patron operations or deploy without instructions.
 
-## This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+Read relevant installed Next.js documentation in node_modules/next/dist/docs before changing framework code; this version may differ from prior Next.js conventions. Run npm run check and relevant browser tests. Validate native Windows behavior before marking it verified. Commit reviewable changes; do not merge automatically.

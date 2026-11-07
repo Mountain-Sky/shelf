@@ -209,18 +209,18 @@ export default function Explore() {
   return (
     <main className={styles.explore}>
       <header className={styles.header}>
-        <a href="/" className={styles.brand}>
+        <a href="/classic" className={styles.brand}>
           <BookOpen size={24} /> shelf<span>.</span>
         </a>
         <nav aria-label="Shelf experiences">
-          <a href="/" target="_blank" rel="noopener noreferrer">
+          <a href="/classic" target="_blank" rel="noopener noreferrer">
             Original experience ↗
           </a>
           <span aria-current="page">
             Visual bookshelf <small>Experiment</small>
           </span>
         </nav>
-        <a href="/" target="_blank" rel="noopener noreferrer">
+        <a href="/classic" target="_blank" rel="noopener noreferrer">
           My shelf · {saved.length} ↗
         </a>
       </header>
@@ -483,8 +483,8 @@ export default function Explore() {
                 void navigate(`More like ${active.title}`, { similar: active })
               }
             />
-            <a href="/" target="_blank" rel="noopener noreferrer">
-              Open the original experience for account access and holds ↗
+            <a href="/classic" target="_blank" rel="noopener noreferrer">
+              Open reading lists and discovery details ↗
             </a>
           </section>
         )}
@@ -527,13 +527,14 @@ export default function Explore() {
       <footer className={styles.footer}>
         <p>
           Same collection. Another way in.{" "}
-          <a href="/" target="_blank" rel="noopener noreferrer">
+          <a href="/classic" target="_blank" rel="noopener noreferrer">
             Keep exploring the original experience ↗
           </a>
         </p>
         <p>
-          Availability is a current observation, not a reservation. Covers use
-          catalog ISBNs via Open Library; missing artwork is labeled.
+          Availability is a current observation, not a reservation. External
+          cover art is optional; missing or disabled artwork uses labeled
+          placeholders.
         </p>
         {notices.length > 0 && (
           <details>

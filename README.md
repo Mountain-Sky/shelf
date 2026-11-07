@@ -1,82 +1,79 @@
-# Shelf Discovery Lab
+# Shelf — Windows CARL•X work prototype
 
-A working visual library discovery demo for the Loudoun County Public Library prototype. Explore a bookshelf, search or refine in natural language, compare editions, and keep a browser-local reading list. The full demo reads 32 works / 44 edition records through an independent local catalog service with persistent synthetic holdings.
+The **Visual bookshelf** is the default experience at `/explore`, with the original interface retained at `/classic` for reading-list management and optional developer inspection. Both share the teal/rust design, Arial typography and rounded discovery composer.
 
-**In the default catalog mode, all records are demo fixtures and all branch counts are synthetic. No live LCPL catalog or CARL•X connection is implemented. Patron accounts and holds are available only in the opt-in local Koha sandbox.** Book covers are requested from Open Library using a checksum-valid ISBN supplied by the selected catalog edition. Missing or failed artwork stays a labeled typographic placeholder; covers are enrichment, not evidence about holdings.
+This package runs locally with an offline mock catalog. **CARL•X is not connected yet.** The SOAP provider is an explicit stub; selecting it returns an error rather than silently displaying mock results. No Koha installation, Docker, WSL, Python, hosting service or AI key is required.
 
-## Replit deployment
+## Windows setup (PowerShell)
 
-Import this repository from GitHub and follow [Private demo on Replit](docs/replit.md). The committed configuration uses a password-protected Reserved VM; no Cloudflare setup is needed. Synthetic holdings reset on each deployment startup.
+1. Install an organization-approved Node.js **22 or 24 LTS** runtime (includes npm).
+2. Extract the ZIP to a normal writable folder, for example `C:\Users\you\source\shelf-work-prototype`. Do not run inside the ZIP. Avoid a network/synced folder for node_modules if possible.
+3. Open PowerShell in that extracted folder:
 
-## Local setup (macOS, Windows or Linux)
-
-Install Node.js 24 LTS, then open a terminal in this repository:
-
-```sh
-npm ci
-npm run demo
+```powershell
+node --version
+npm.cmd --version
+npm.cmd ci
+Copy-Item .env.example .env.local
+npm.cmd run dev
 ```
 
-Visit http://127.0.0.1:3000. The command starts Shelf and its independent catalog simulator; no configuration or AI key is needed. Both bind to loopback. Stop with Ctrl+C. If port 3000 is occupied, use `npm run demo -- --port 3001`.
+Use `npm.cmd` in PowerShell to avoid execution-policy problems with npm.ps1; no policy change is needed. Copy `.env.example` only on first setup; do not overwrite an existing local configuration.
 
-For the reviewer walkthrough and password-protected container package, see [Private demo](docs/private-demo.md). For the stock-change demonstration, see [Catalog sandbox](docs/catalog-sandbox.md). The simulator is not a full ILS; [Koha evaluation](docs/koha-evaluation.md) documents the separate integration path.
+Open **http://127.0.0.1:3000** in a browser on that laptop. It redirects to the Visual bookshelf. Keep the terminal running. Stop with **Ctrl+C**. Restart with `npm.cmd run dev`.
 
-`npm run dev` remains available as a simpler embedded-fixture development mode. The recommended complete demo is `npm run demo`.
+The dependency installation needs npm registry access or your organization's configured registry. Once installed, mock discovery requires no catalog connection. If port 3000 is occupied, use `npm.cmd run dev -- --port 3001` and open that port.
 
-Optional configuration: on macOS/Linux run `cp .env.example .env.local`; on Windows PowerShell run `Copy-Item .env.example .env.local`. Keep `CATALOG_MODE=mock`. Never commit `.env.local` or prefix a secret with `NEXT_PUBLIC_`.
+## First walkthrough
 
-## Checks and production mode
+- Search **Find The Hobbit**.
+- Select **Ashburn** in the branch menu.
+- Open the title, inspect its availability, save it and add it to comparison.
+- Follow **My shelf** to the original interface; use its My shelf button to manage the browser-local list.
+- Try an impossible title and confirm there are no substituted results.
 
-```sh
-npm test
-npm run build
-npm run typecheck
-npm run demo:start
+All initial holdings are synthetic fixtures, not LCPL observations. Saved lists contain bibliographic labels only and are stored in this browser on this device. They do not persist availability. Discovery sessions expire and are lost on server restart.
+
+## Build and verification
+
+```powershell
+npm.cmd run check
+npm.cmd start
 ```
 
-Build before starting production mode; stop the development demo first to free ports 3000 and 4310. `npm run test:e2e` runs Chromium interaction checks against production demos on ports 3100 and 3102, including protected access and independent catalog stock changes, after `npm run build`. In restricted environments, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can point to an installed Chromium executable. Otherwise, first install the test browser with `npx playwright install chromium` (Linux may additionally require browser system libraries).
+`check` runs unit/contract tests, production build and TypeScript validation. `start` requires a successful build. Stop the development server first if it uses the same port.
 
-The committed npm lockfile makes installs reproducible. `npm audit` checks known dependency advisories; a clean result does not establish complete application security. Do not run dev and production builds concurrently in the same checkout because they share `.next`.
+Optional Chromium browser tests (browser download required):
 
-## Using Shelf
+```powershell
+npx.cmd playwright install chromium
+npm.cmd run test:e2e
+```
 
-- Search for “Project Hail Mary”, “gentle science fiction”, or “adventure for kids”. Unmatched queries produce an honest empty result.
-- Follow-up prompts update structured session preferences. “Only mysteries” and children requests apply explicit fixture subject filters. This is a small English heuristic system, not semantic search or age-suitability advice.
-- Changing the branch reruns the current query. Availability is resolved separately: unavailable books remain discoverable unless you request only available titles. Zero copies and unknown availability are distinct.
-- Save/remove titles and copy or clear your reading list. The reading list persists in this browser on this device, up to 100 titles. It stores only record identity, title and author—not holdings, search history or server sessions. Copy, download or clear it from My shelf; use Find in catalog to retrieve current observations. Browser storage failures are shown explicitly. The visible conversation disappears on reload; the engine uses a separate short-lived structured session described below.
-- With local diagnostics enabled, open Discovery Engine for the plan structure, retrieved candidates, grouping/ranking results, model status and stage timings. This optional view is for the local developer; it is not an authenticated administration system.
+Build first with the default mock branches and cover setting. Browser tests use port 3105 and isolated mock configuration, without AI calls. See [VALIDATION.md](VALIDATION.md) for the actual checks performed and the Windows verification limit.
 
-## Optional Koha sandbox
+## Connect CARL•X at work
 
-An opt-in Koha REST catalog provider with separate sandbox circulation support is available without changing the Next.js architecture. See [Koha sandbox provider](docs/koha.md) for server-only OAuth configuration, source contracts, MARC21 subject/genre coverage, and live validation. The default demo still uses fixtures; enabling this adapter does not provision or host Koha.
+Begin with [docs/carlx.md](docs/carlx.md) and [docs/WORK-HANDOFF.md](docs/WORK-HANDOFF.md). Bring the working SOAP client or sanitized requests/responses, service definitions, branch codes and availability meanings. Keep credentials and private service artifacts on the work machine.
 
-## Optional AI
+- Implement `lib/providers/carlx.ts` against `CatalogProvider` in `lib/types.ts`.
+- Wire the verified adapter into `dependencies()` in `lib/application/discovery-service.ts`, replacing its intentional CARL•X configuration error.
+- Test sanitized SOAP fixtures before read-only work-network calls.
+- Then set `CATALOG_MODE=carlx` in `.env.local`, restart and verify a known title and holdings against the existing client.
 
-Put `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in `.env.local`, then restart. The default model is `gpt-4.1-mini`. The server sends the bounded current request/context and shortlisted candidate IDs, titles, contributors, subjects and summaries to OpenAI with `store:false`. Do not enter patron personal information. Provider retention policies still apply.
+This is an integration starting point, not a completed SOAP client. No endpoint, SOAP operation, namespace or authentication mechanism has been invented. Patron login, holds and renewals are excluded.
 
-AI can propose bounded search terms and intent, then assess existing candidate records using exact supplied metadata as evidence. Its structured output is validated; it cannot relax strict filters. All displayed prose is composed by the server from catalog facts. It cannot create new bibliographic records or availability claims. Errors, timeouts or invalid selections fall back to deterministic text. No key means no model requests. Live model connectivity requires your own key and has not been verified here; mocked success/error responses are tested.
+## Optional integrations
 
-## Architecture foundation
+- **Cover art:** defaults off. Set `NEXT_PUBLIC_SHELF_COVERS=openlibrary` before building (or restart dev) to request ISBN-matched art directly from Open Library. This sends ISBNs and the browser's network address to that service. Missing artwork remains a labeled placeholder.
+- **AI:** defaults off. The engine works deterministically. Only configure `OPENAI_API_KEY` locally if permitted for workplace use; discovery text and candidate metadata may be sent to the model. Never prefix secrets with `NEXT_PUBLIC_`.
+- **Inspector:** set `SHELF_INSPECTOR=1`, restart and open `/classic` → Show Discovery Engine. Request text is omitted from browser traces; diagnostics remain local.
+- **Branches:** adapt the provider's optional `branches()` method and the documented public branch configuration. Default fixture branches are Ashburn, Rust and Purcellville. Never put secrets in public configuration.
 
-Shelf uses a provider-independent Discovery Engine between the UI and every catalog/model integration. Read [ARCHITECTURE.md](ARCHITECTURE.md) first, then [DISCOVERY_ENGINE.md](DISCOVERY_ENGINE.md) and [CATALOG_DATA_MODEL.md](CATALOG_DATA_MODEL.md). The [roadmap](ROADMAP.md) separates implemented foundations from the later Koha example and visual redesign. CARL•X SOAP access/search are user-confirmed; this repository adapter awaits their sanitized mappings.
+This package binds to loopback by default. It is for local testing and does not publish your workplace service. The process environment overrides `.env.local`; check for old `CATALOG_MODE` settings if the wrong configuration appears. Do not disable TLS verification to work around corporate certificates; configure the approved trust chain.
 
-Server sessions retain structured preferences and the latest displayed result order for 30 minutes idle, in memory only. Refreshing starts a new browser session; restarting the server expires server context. “More like the second one, but shorter” uses the selected edition’s fixture page count; missing length evidence prompts clarification. Strict page, format and availability filters are never silently relaxed.
+## Package provenance
 
-Set `SHELF_INSPECTOR=1` locally to enable diagnostic responses; restart the server after changing configuration. Browser diagnostics omit request text. No diagnostic trace is returned by default.
+Frontend source: `Mountain-Sky/shelf`, `feat/visual-bookshelf-review`, commit `04af21087ac4bc286b5f891eeb31e0e597bba5e5`. See [EXPORT-MANIFEST.json](EXPORT-MANIFEST.json) for the exact exported commit, file list and checksums.
 
-## Documentation
-
-- [Architecture and audit](docs/architecture.md)
-- [CARL•X integration requirements](docs/carlx.md)
-
-This is a local prototype. Public deployment is out of scope. Local Koha supports synthetic patron sign-in, loans, holds and renewals; CARL remains a future adapter.
-
-## Local Koha interface checks
-
-With an existing Koha-backed Shelf running, run `SHELF_KOHA_TEST_URL=http://127.0.0.1:3000 npm run test:e2e:koha`. These browser tests read the existing sandbox; they never bootstrap, reset or seed its database. The expected seeded title and branch states are documented in `sandbox/koha/README.md`. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium installation.
-
-The Koha application wiring allows six seconds per catalog/holdings stage; other providers retain their default deadlines. Errors still fail closed and unknown holdings are never displayed as zero. Cards expose branch counts and observation times, with a refresh action preserving the current search and filters.
-
-Cover images load directly from Open Library, lazily, with no referrer. This shares the catalog ISBN and browser network information with that service. No title-based guesses, credentials or patron data are sent. Its [Covers API](https://openlibrary.org/dev/docs/api/covers) can return missing-image and rate-limit errors; both retain the labeled fallback. Artwork is not guaranteed to match local jacket variants.
-
-For isolated local review builds, set `SHELF_REVIEW_BUILD=1` during both build and startup to use `.next-review` without overwriting `.next` used by a running server. Never rebuild a directory while its server is serving it.
+Included: Next.js UI/API, discovery engine, provider contracts, fixture catalog, CARL•X scaffold, optional server-side AI adapter, tests and documentation. Excluded: Koha providers/runtime/database, patron operations, MCP/OAuth connectors, Replit/Docker/hosting configuration, local secrets, logs, caches, node_modules and build output. The original project and Mac sandbox remain separate.
